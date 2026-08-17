@@ -2,6 +2,8 @@
 #include "MediaType.h"
 
 #include <math.h>
+#include <string.h>
+#include <wchar.h>
 #include <new>
 
 // dllmain.cpp 里的模块引用计数，DllCanUnloadNow 要用
@@ -172,8 +174,10 @@ STDMETHODIMP CKeySoundApo::GetInputChannelCount(UINT32* channel_count) {
     if (channel_count == NULL) {
         return E_POINTER;
     }
-    *channel_count = locked_ ? channels_ : 0;
-    return locked_ ? S_OK : E_FAIL;
+    // 还没 LockForProcess 的时候声道数是未知的，但这里不能报错：
+    // 有的宿主在协商之前就会问一次，返回失败会让整条链路建不起来
+    *channel_count = channels_;
+    return S_OK;
 }
 
 bool CKeySoundApo::ReadTestToneFlag() {

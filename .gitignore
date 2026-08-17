@@ -8,3 +8,12 @@ env/
 
 # 运行时产生的临时文件
 tmp/
+
+# C++ 的编译产物（native/ 下只提交源码和工程文件，DLL/EXE 从 CI 下载）
+native/**/x64/
+native/**/.vs/
+*.aps
+
+# 虚拟麦克风的 DLL / 工具会被拷到根目录来用
+KeySoundApo.dll
+vmic_setup.exe

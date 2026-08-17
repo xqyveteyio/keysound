@@ -8,5 +8,9 @@
     "auto_run": false,
     "font": "微软雅黑",
     "theme": "默认",
-    "stop_hotkey": ""
+    "stop_hotkey": "",
+    "virtual_mic": false,
+    "virtual_mic_device": "",
+    "virtual_mic_slot": "efx",
+    "virtual_mic_volume": 100
 }

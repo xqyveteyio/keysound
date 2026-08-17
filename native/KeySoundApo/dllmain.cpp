@@ -3,6 +3,7 @@
 // 不允许的调用，表现是加载失败、前几秒没声音、之后彻底忽略这个 APO。
 // 链接选项里的 /MANIFEST:NO 就是为了这个（实现方案.md 第 3 节第 4 条）。
 #include <windows.h>
+#include <objbase.h>
 #include <new>
 
 #include "KeySoundApo.h"

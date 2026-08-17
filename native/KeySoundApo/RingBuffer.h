@@ -4,6 +4,8 @@
 #pragma once
 
 #include <sddl.h>
+#include <string.h>
+
 #include "../common/KeySoundShared.h"
 
 class RingConsumer {

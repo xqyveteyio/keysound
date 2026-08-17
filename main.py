@@ -8,6 +8,7 @@ from utils.mouse_util import *
 from utils.keyboard_util import *
 from utils.sound_util import *
 from utils.window_util import *
+from utils import vmic_win
 
 
 if __name__ == '__main__':
@@ -18,6 +19,9 @@ if __name__ == '__main__':
     print("已经有一个实例在运行了!")
     show_warning("提示", "KeySound 已经在运行了\n请留意右下角图标")
     sys.exit(-1)
+
+  # 虚拟麦克风的混音线程：开关是关的时候它只是空转，开着才会去连共享内存
+  vmic_win.start()
 
   event1 = threading.Event()
   # 开线程监听键盘

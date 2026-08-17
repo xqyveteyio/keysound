@@ -4,6 +4,7 @@
 #pragma once
 
 #include <windows.h>
+#include <objbase.h>
 #include <mmreg.h>
 #include <ks.h>
 #include <ksmedia.h>

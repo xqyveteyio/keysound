@@ -1,0 +1,43 @@
+# 编虚拟麦克风那两个 C++ 组件。
+# windows-latest 镜像自带 MSVC 和 Windows SDK，不需要 WDK（代码没用 WDK 的基类和 AudioEng.lib），
+# 所以本机不装 Visual Studio 也能改代码：push 上来从 Actions 页面下载产物就能测。
+name: build-apo
+
+on:
+  push:
+    paths:
+      - 'native/**'
+      - '.github/workflows/build-apo.yml'
+  pull_request:
+    paths:
+      - 'native/**'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: microsoft/setup-msbuild@v2
+      - name: Build KeySoundApo.dll
+        run: msbuild native/KeySoundApo/KeySoundApo.vcxproj /p:Configuration=Release /p:Platform=x64 /m
+      - name: Build vmic_setup.exe
+        run: msbuild native/vmic_setup/vmic_setup.vcxproj /p:Configuration=Release /p:Platform=x64 /m
+      # DLL 带了嵌入式 manifest 的话，在 audiodg 的保护环境里会加载失败而且很难查，
+      # 这里直接卡住，别让它流到用户手上
+      - name: Check the DLL has no embedded manifest
+        shell: pwsh
+        run: |
+          $dll = 'native/KeySoundApo/x64/Release/KeySoundApo.dll'
+          $bytes = [System.IO.File]::ReadAllBytes($dll)
+          $text = [System.Text.Encoding]::ASCII.GetString($bytes)
+          if ($text -match 'assemblyIdentity') {
+            throw "KeySoundApo.dll 里有嵌入式 manifest，audiodg 会拒绝加载它"
+          }
+      - uses: actions/upload-artifact@v4
+        with:
+          name: KeySoundApo-x64
+          path: |
+            native/KeySoundApo/x64/Release/KeySoundApo.dll
+            native/KeySoundApo/x64/Release/KeySoundApo.pdb
+            native/vmic_setup/x64/Release/vmic_setup.exe

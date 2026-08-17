@@ -10,6 +10,8 @@ import json
 from utils.api import *
 from utils.platform_util import IS_WINDOWS, WEBVIEW_GUI, set_linux_autostart
 from utils.web_key import inject_web_key_listener
+from utils.vmic_win import (list_capture_devices, enable_virtual_mic,
+                            disable_virtual_mic, virtual_mic_status)
 
 if IS_WINDOWS:
     import winreg
@@ -140,7 +142,11 @@ def create_window_():
                       upload_plugin,
                       upload_file,
                       download_file,
-                      upload_sound
+                      upload_sound,
+                      list_capture_devices,
+                      enable_virtual_mic,
+                      disable_virtual_mic,
+                      virtual_mic_status
     )
     if not IS_WINDOWS:
       # Linux 下键盘事件由页面自己上报，页面每次加载完都要重新注入监听

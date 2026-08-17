@@ -1,6 +1,7 @@
 from config.global_config import global_config_obj
 from config.sound_config import SoundConfig
 from utils import audio_util
+from utils import vmic_win
 import random
 import os
 import json
@@ -137,6 +138,9 @@ def upload_sound():
 
 
 def play_sound(path: str):
+    # 虚拟麦克风那一路要在播放之前喂：play_file() 是阻塞到播完才返回的，
+    # 放在后面等于每个音效都晚一整段时间才进麦克风
+    vmic_win.feed(path)
     # 打断模式下最多同时响 3 个音，和 Windows 那边多进程打断的逻辑保持一致
     audio_util.play_file(path, max_concurrent=3 if global_config_obj.break_flag else 0)
 
@@ -157,6 +161,8 @@ def previewSound(name):
 # 立刻停掉所有正在响的音效，按键触发的和试听的都算
 def stopSound():
     count = audio_util.stop_all()
+    # 环形缓冲里剩下的那点音频不清掉的话，还会继续从麦克风出去
+    vmic_win.clear()
     print('停止播放，掐掉', count, '个音效')
     return count
 
