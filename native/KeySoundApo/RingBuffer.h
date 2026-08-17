@@ -3,10 +3,11 @@
 // 只有消费者动 read_index，两边都只读对方那个下标。
 #pragma once
 
+// KeySoundShared.h 要放最前面：它带进 windows.h，而 sddl.h 自己不 include
+#include "../common/KeySoundShared.h"
+
 #include <sddl.h>
 #include <string.h>
-
-#include "../common/KeySoundShared.h"
 
 class RingConsumer {
 public:

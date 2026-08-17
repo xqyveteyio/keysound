@@ -44,6 +44,9 @@
     <ClCompile>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <WarningLevel>Level3</WarningLevel>
+      <!-- 这里用了 std::wstring / std::vector，不显式开异常的话 MSVC 会对着
+           每个 STL 头报 C4530。APO 那个 DLL 相反，必须保持关闭 -->
+      <ExceptionHandling>Sync</ExceptionHandling>
       <PreprocessorDefinitions>WIN32_LEAN_AND_MEAN;_WIN32_WINNT=0x0A00;UNICODE;_UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <!-- 源码里的中文注释是 UTF-8，不显式指定的话 MSVC 会按系统代码页读，编不过 -->
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>

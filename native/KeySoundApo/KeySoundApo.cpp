@@ -10,12 +10,6 @@
 void ModuleAddRef();
 void ModuleRelease();
 
-// 老 SDK 里没有这个错误码，退回一个语义最接近的
-#ifndef APOERR_FORMAT_NOT_SUPPORTED
-#include <audioclient.h>
-#define APOERR_FORMAT_NOT_SUPPORTED AUDCLNT_E_UNSUPPORTED_FORMAT
-#endif
-
 static const float kTestToneHz = 440.0f;
 static const float kTestToneGain = 0.25f;
 static const float kTwoPi = 6.283185307179586f;
