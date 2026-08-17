@@ -1,0 +1,11 @@
+{
+    "keyboard_flag": true,
+    "mouse_flag": false,
+    "break_flag": false,
+    "single_flag": false,
+    "now_play": true,
+    "choose_sound": "老婆的声音",
+    "auto_run": false,
+    "font": "微软雅黑",
+    "theme": "白"
+}

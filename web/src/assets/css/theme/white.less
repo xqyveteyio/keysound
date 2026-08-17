@@ -1,0 +1,61 @@
+*{
+  color: #3f3f3f !important;
+  background: #fff !important;
+}
+.key{
+  background:#ececec !important;
+  color: #3f3f3f !important;
+  &:hover {
+    // 显示alt
+    &::after {
+      content: attr(alt);
+      position: absolute;
+      top: 0;
+      left: 0;
+      background: #ffffffbe !important;
+      border-radius: 5px;
+    }
+  }
+}
+.active {
+  background: linear-gradient(315deg, #cacaca, #cacaca) !important;
+}
+.el-switch__core .el-switch__action{
+  background: #cacaca !important;
+}
+.el-switch.is-checked .el-switch__core .el-switch__action{
+  background: skyblue !important;
+}
+.item{
+  &:hover{
+    span{
+      background:  #ececec !important;
+      transition: all 0.2s;
+      &:last-child{
+        color: red !important;
+      }
+    }
+  }
+}
+.menu{
+  border-right: 1px solid #ebeef5 !important;
+}
+
+&.router-link-exact-active {
+  // background: #f5f7fa !important;
+  i {
+    color: #409eff !important;
+  }
+}
+.el-select-dropdown__item{
+  &:hover{
+    background: #ececec !important;
+    span{
+      background: #ececec !important;
+    }
+  }
+}
+
+.el-checkbox__input.is-checked .el-checkbox__inner::after{
+  background: skyblue !important;
+}

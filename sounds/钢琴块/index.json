@@ -1,0 +1,115 @@
+{
+    "name": "钢琴块",
+    "mode": "指定",
+    "repeat_sound": "",
+    "single_key": [],
+    "assigned_sounds": [
+        {
+            "key": "Q",
+            "sound": "Q.mp3"
+        },
+        {
+            "key": "W",
+            "sound": "W.mp3"
+        },
+        {
+            "key": "E",
+            "sound": "E.mp3"
+        },
+        {
+            "key": "R",
+            "sound": "R.mp3"
+        },
+        {
+            "key": "T",
+            "sound": "T.mp3"
+        },
+        {
+            "key": "Y",
+            "sound": "Y.mp3"
+        },
+        {
+            "key": "U",
+            "sound": "U.mp3"
+        },
+        {
+            "key": "I",
+            "sound": "I.mp3"
+        },
+        {
+            "key": "O",
+            "sound": "O.mp3"
+        },
+        {
+            "key": "P",
+            "sound": "P.mp3"
+        },
+        {
+            "key": "[ {",
+            "sound": "[.mp3"
+        },
+        {
+            "key": "] }",
+            "sound": "].mp3"
+        },
+        {
+            "key": "Z",
+            "sound": "Z.mp3"
+        },
+        {
+            "key": "X",
+            "sound": "X.mp3"
+        },
+        {
+            "key": "C",
+            "sound": "C.mp3"
+        },
+        {
+            "key": "V",
+            "sound": "V.mp3"
+        },
+        {
+            "key": "N",
+            "sound": "N.mp3"
+        },
+        {
+            "key": "M",
+            "sound": "M.mp3"
+        },
+        {
+            "key": ", <",
+            "sound": ",.mp3"
+        },
+        {
+            "key": ". >",
+            "sound": "..mp3"
+        },
+        {
+            "key": "/ ?",
+            "sound": "slash.mp3"
+        }
+    ],
+    "soundsList": [
+        ",.mp3",
+        "..mp3",
+        "C.mp3",
+        "E.mp3",
+        "I.mp3",
+        "M.mp3",
+        "N.mp3",
+        "O.mp3",
+        "P.mp3",
+        "Q.mp3",
+        "R.mp3",
+        "slash.mp3",
+        "T.mp3",
+        "U.mp3",
+        "V.mp3",
+        "W.mp3",
+        "X.mp3",
+        "Y.mp3",
+        "Z.mp3",
+        "[.mp3",
+        "].mp3"
+    ]
+}

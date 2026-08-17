@@ -1,0 +1,16 @@
+{
+    "name": "木鱼",
+    "mode": "指定",
+    "repeat_sound": "",
+    "version": "1.0.0",
+    "assigned_sounds": [
+        {
+            "key": "Space",
+            "sound": "1.mp3"
+        }
+    ],
+    "soundsList": [
+        "1.mp3"
+    ],
+    "single_key": []
+}

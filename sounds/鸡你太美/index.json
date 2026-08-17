@@ -1,0 +1,32 @@
+{
+    "name": "鸡你太美",
+    "mode": "指定",
+    "repeat_sound": "",
+    "single_key": [],
+    "assigned_sounds": [
+        {
+            "key": "J",
+            "sound": "鸡.MP3"
+        },
+        {
+            "key": "N",
+            "sound": "你.MP3"
+        },
+        {
+            "key": "T",
+            "sound": "太.MP3"
+        },
+        {
+            "key": "M",
+            "sound": "美.MP3"
+        }
+    ],
+    "soundsList": [
+        "你.MP3",
+        "唱.MP3",
+        "太.MP3",
+        "美.MP3",
+        "跳.MP3",
+        "鸡.MP3"
+    ]
+}

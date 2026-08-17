@@ -1,0 +1,42 @@
+{
+    "name": "单键位随机",
+    "mode": "单键随机",
+    "repeat_sound": "",
+    "assigned_sounds": [],
+    "soundsList": [
+        "1.wav",
+        "11.wav",
+        "12.wav",
+        "13.wav",
+        "14.wav",
+        "15.wav",
+        "16.wav",
+        "17.wav",
+        "18.wav",
+        "19.wav",
+        "2.wav",
+        "20.wav",
+        "21.wav",
+        "22.wav",
+        "23.wav",
+        "24.wav",
+        "25.wav",
+        "26.wav",
+        "27.wav",
+        "28.wav",
+        "29.wav",
+        "3.wav",
+        "30.wav",
+        "31.wav",
+        "32.wav",
+        "4.wav",
+        "5.wav",
+        "6.wav",
+        "7.wav",
+        "8.wav",
+        "9.wav"
+    ],
+    "single_key": [
+        "Space"
+    ]
+}

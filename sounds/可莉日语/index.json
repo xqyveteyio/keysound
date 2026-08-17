@@ -1,0 +1,55 @@
+{
+    "name": "可莉日语",
+    "mode": "指定",
+    "repeat_sound": "",
+    "assigned_sounds": [
+        {
+            "key": "1",
+            "sound": "hu  wa~.mp3"
+        },
+        {
+            "key": "2",
+            "sound": "hu a i.mp3"
+        },
+        {
+            "key": "3",
+            "sound": "哒哒哒.mp3"
+        },
+        {
+            "key": "4",
+            "sound": "哼哼.mp3"
+        },
+        {
+            "key": "5",
+            "sound": "唔喵.mp3"
+        },
+        {
+            "key": "7",
+            "sound": "略略略.mp3"
+        },
+        {
+            "key": "8",
+            "sound": "蒋蒋.mp3"
+        },
+        {
+            "key": "9",
+            "sound": "蹦蹦炸弹.mp3"
+        },
+        {
+            "key": "6",
+            "sound": "啦啦啦.mp3"
+        }
+    ],
+    "soundsList": [
+        "hu  wa~.mp3",
+        "hu a i.mp3",
+        "哒哒哒.mp3",
+        "哼哼.mp3",
+        "唔喵.mp3",
+        "啦啦啦.mp3",
+        "略略略.mp3",
+        "蒋蒋.mp3",
+        "蹦蹦炸弹.mp3"
+    ],
+    "single_key": []
+}
