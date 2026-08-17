@@ -28,6 +28,9 @@ class GlobalConfig:
     def reload(self):
         with open('config.json', 'r', encoding='utf-8') as f:
             self.__dict__.update(json.loads(f.read()))
+        # 旧版本的主题名："默认" 那时候是深色，另外还有一个叫 "白" 的浅色主题。
+        # 现在默认就是浅色，深色变成可选项，老配置照着新名字换一下
+        self.theme = {'白': '默认', '黑': '深色'}.get(self.theme, self.theme)
 
     def save(self):
         with open('config.json', 'w', encoding='utf-8') as f:

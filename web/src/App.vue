@@ -66,6 +66,7 @@ export default {
   height: 100%;
   // width: 1200px;
   display: flex;
-  background-color: #333;
+  background-color: var(--bg);
+  color: var(--fg);
 }
 </style>

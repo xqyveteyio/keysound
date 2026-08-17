@@ -16,8 +16,11 @@ if IS_WINDOWS:
     import pystray
     from pystray import MenuItem
     from PyQt5 import QtGui
-else:
+elif WEBVIEW_GUI == 'gtk':
+    # 托盘要和 webview 共用同一个事件循环，所以跟着后端选实现
     from utils.tray_linux import start_tray
+else:
+    from utils.tray_qt import start_tray
 
 # 托盘是否真的建起来了，没有托盘的话关掉窗口就该退出程序
 tray_running = False
@@ -38,7 +41,7 @@ def on_closing():
     print('窗口即将关闭')
     window_config_obj.window_flag = False
     if not IS_WINDOWS and tray_running:
-      # Linux 上 webview.start() 不能重复调用，窗口销毁了就再也开不起来，
+      # 非 Windows 上 webview.start() 不能重复调用，窗口销毁了就再也开不起来，
       # 所以只把窗口藏起来，返回 False 取消这次关闭
       window_config_obj.window.hide()
       return False
@@ -92,71 +95,16 @@ def globalSwitch(open1, switch1, switch2):
       global_config_obj.reload()
       return global_config_obj.keyboard_flag,global_config_obj.mouse_flag
 
-# 注入主题（加载css）
+# 注入主题：主题就是 themes/<主题名>.css，里面只需要重新赋值 :root 上那套颜色变量。
+# "默认"（浅色）没有对应文件，也就等于不注入
 def inject_theme():
-  if global_config_obj.theme == "白":
-    window_config_obj.window.load_css("""
-   * {
-  color: #3f3f3f !important;
-  background: #fff !important;
-}
-
-.key {
-  background: #ececec !important;
-  color: #3f3f3f !important;
-}
-
-.key:hover::after {
-  content: attr(alt);
-  position: absolute;
-  top: 0;
-  left: 0;
-  background: #ffffffbe !important;
-  border-radius: 5px;
-}
-
-.active {
-  background: linear-gradient(315deg, #cacaca, #cacaca) !important;
-}
-
-.el-switch__core .el-switch__action {
-  background: #cacaca !important;
-}
-
-.el-switch.is-checked .el-switch__core .el-switch__action {
-  background: skyblue !important;
-}
-
-.item:hover span {
-  background: #ececec !important;
-  transition: all 0.2s;
-}
-
-.item:hover span:last-child {
-  color: red !important;
-}
-
-.menu {
-  border-right: 1px solid #ebeef5 !important;
-}
-
-.router-link-exact-active i {
-  color: #409eff !important;
-}
-
-.el-select-dropdown__item:hover {
-  background: #ececec !important;
-}
-
-.el-select-dropdown__item:hover span {
-  background: #ececec !important;
-}
-
-.el-checkbox__input.is-checked .el-checkbox__inner::after {
-  background: skyblue !important;
-}
-   
-   """)
+  path = os.path.join('themes', f'{global_config_obj.theme}.css')
+  if not os.path.isfile(path):
+    return
+  with open(path, encoding='utf-8') as f:
+    css = f.read()
+  if css.strip():
+    window_config_obj.window.load_css(css)
 
 
 # 创建window
@@ -195,7 +143,7 @@ def create_window_():
       # Linux 下键盘事件由页面自己上报，页面每次加载完都要重新注入监听
       window_config_obj.window.expose(web_key_event)
       window_config_obj.window.events.loaded += on_loaded
-      # 托盘要和 pywebview 共用同一个 GTK 主循环，所以在主线程里、start() 之前创建
+      # 托盘要和 pywebview 共用同一个事件循环，所以在主线程里、start() 之前创建
       tray_running = start_tray(test, quit_app)
     # 查看本地debug.txt是否存在 存在则开启debug模式
     tmp = False

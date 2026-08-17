@@ -2,12 +2,57 @@
   margin: 0;
   padding: 0;
   box-sizing: border-box;
-  /* 字体微软雅黑 */
-  font-family: 'Microsoft YaHei';
-  
+  /* 微软雅黑只有 Windows 有，后面几个是 Linux / macOS 上的等价中文字体 */
+  font-family: 'Microsoft YaHei', 'Noto Sans CJK SC', 'Source Han Sans SC', 'PingFang SC', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
 }
 
 
 html, body{
   height: 100%;
+  background: var(--bg);
+  color: var(--fg);
+}
+
+/* 一整套颜色都收在这里，组件里只写 var(...)。
+   换主题就是 themes/<主题名>.css 重新给这些变量赋值（见 themes/深色.css），
+   这样主题文件不用去和 scoped 样式比选择器优先级，也不用满屏 !important。
+   默认这套是浅色。 */
+:root{
+  --bg: #ffffff;
+  --fg: #3f3f3f;
+  --border: #ebeef5;
+  --divider: #e4e7ed;
+  --hover-bg: #f2f3f5;
+  --hover-fg: #303133;
+  --active-bg: #e9ebef;
+  --nav-fg: #5a5f66;
+  --nav-active-bg: #ecf5ff;
+  --nav-active-fg: #409eff;
+  --chip-bg: #f2f3f5;
+  --chip-fg: #303133;
+  --danger-bg: #fef0f0;
+  --danger-fg: #f56c6c;
+  --item-bg: #f4f5f7;
+  --item-hover-bg: #ebedf0;
+  --scrollbar: #d3d6db;
+
+  /* 键盘 */
+  --kb-deck: #f4f6f8;
+  --kb-key-bg: #ffffff;
+  --kb-key-fg: #4a4f57;
+  --kb-key-border: #e2e5ea;
+  --kb-key-border-hover: #c9ced6;
+  --kb-key-shadow: 0 1px 1px rgba(31, 45, 61, 0.06);
+  --kb-tip-bg: rgba(255, 255, 255, 0.92);
+  /* 绑定了音效的键 */
+  --kb-bind-bg: #e8f4ff;
+  --kb-bind-fg: #2b7fd4;
+  --kb-bind-border: #a3d3ff;
+  /* 正在按下的键：走"反色"，比加一圈彩色发光干净，而且两套主题都够明显 */
+  --kb-down-bg: #2f3540;
+  --kb-down-fg: #ffffff;
+
+  /* 启动时的转场遮罩 */
+  --loader-fg: #409eff;
 }

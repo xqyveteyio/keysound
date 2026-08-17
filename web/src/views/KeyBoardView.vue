@@ -35,12 +35,13 @@ export default {
 <style lang="less" scoped>
 .keyboard_view {
   height: 100%;
-  width: 95%;
-  background-color: #333;
-  // display: flex;
-  // flex-direction: column;
-  // align-items: center;
-  // justify-content: end;
-  color: #fff;
+  // 侧边栏定宽，剩下的全给键盘页，min-width 用来防止内容把布局撑破
+  flex: 1;
+  min-width: 0;
+  // 工具栏和音效列表按内容高度排，剩下的高度全给键盘，中间不留空档
+  display: flex;
+  flex-direction: column;
+  background-color: var(--bg);
+  color: var(--fg);
 }
 </style>

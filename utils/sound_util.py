@@ -5,6 +5,7 @@ import random
 import os
 import json
 import shutil
+import tempfile
 import webview
 from config.window_config import window_config_obj
 import multiprocessing
@@ -12,35 +13,106 @@ from config.global_config import all_sounds, global_config_obj
 from utils.api import upload_file, upload_plugin
 
 
-# 导出音效
-def exportSound(name):
-    print("导出音效---------------------")
-    file_types = ('Image Files (*.zip)', 'All files (*.*)')
-    print(name)
-    result = window_config_obj.window.create_file_dialog(webview.SAVE_DIALOG, allow_multiple=False, file_types=file_types,save_filename=name)
-    if result:
-      print("导出:", result)
-      target = result[0]
-      shutil.make_archive(target, 'zip', f'./sounds/{name}')
-      return True
-    return False
+# 音效包的分发格式：一个包一个文件。内容就是 zip（里面是 index.json + sounds/），
+# 换个后缀是为了让人一眼知道这是 KeySound 的包，也方便做文件关联
+PACK_EXT = '.bspack'
+# 老版本导出的是 .zip，导入时一并认
+PACK_FILE_TYPES = (
+    f'KeySound 音效包 (*{PACK_EXT})',
+    'Zip 压缩包 (*.zip)',
+    'All files (*.*)',
+)
 
-# 导入音效
-def importSound():
-    file_types = ('Image Files (*.zip)', 'All files (*.*)')
-    result = window_config_obj.window.create_file_dialog(webview.OPEN_DIALOG, allow_multiple=True, file_types=file_types)
+
+# 导出音效包：打包成单个 .bspack 文件
+def exportSound(name):
+    result = window_config_obj.window.create_file_dialog(
+        webview.SAVE_DIALOG, allow_multiple=False,
+        file_types=PACK_FILE_TYPES, save_filename=f'{name}{PACK_EXT}')
     if not result:
+        return False
+    target = result if isinstance(result, str) else result[0]
+    # Qt 的保存框不会照着筛选器自动补后缀，用户删了得给他加回来
+    if os.path.splitext(target)[1].lower() not in (PACK_EXT, '.zip'):
+        target += PACK_EXT
+    # make_archive 只认 .zip 后缀（自己往 base_name 后面接），
+    # 没法直接产出 .bspack，所以先打到临时目录再挪过去
+    tmp_dir = tempfile.mkdtemp(prefix='keysound-pack-')
+    try:
+        zip_path = shutil.make_archive(
+            os.path.join(tmp_dir, 'pack'), 'zip', f'./sounds/{name}')
+        shutil.move(zip_path, target)
+    finally:
+        shutil.rmtree(tmp_dir, ignore_errors=True)
+    print('导出音效包:', target)
+    return True
+
+
+# 导入音效包：可以一次选多个，返回真正导入进来的包名列表；取消返回 None
+def importSound():
+    result = window_config_obj.window.create_file_dialog(
+        webview.OPEN_DIALOG, allow_multiple=True, file_types=PACK_FILE_TYPES)
+    if not result:
+        return None
+    names = []
+    for path in result:
+        try:
+            names.append(_import_pack(str(path)))
+        except Exception as e:
+            # 一个包坏了不影响剩下的
+            print('导入失败:', path, e)
+    return names
+
+
+def _import_pack(path):
+    # 包名取文件名（只去掉最后一个后缀），已经有同名的就往后加 -2 -3
+    base = os.path.splitext(os.path.basename(path))[0] or '音效包'
+    name = base
+    i = 2
+    while os.path.exists(f'./sounds/{name}'):
+        name = f'{base}-{i}'
+        i += 1
+    dest = f'./sounds/{name}'
+    os.makedirs(dest)
+    try:
+        # 后缀不是 .zip，unpack_archive 猜不出格式，直接告诉它
+        shutil.unpack_archive(path, dest, format='zip')
+        _flatten_single_dir(dest)
+        _fix_pack_name(name, dest)
+    except Exception:
+        # 解压到一半失败就别留个残包在列表里
+        shutil.rmtree(dest, ignore_errors=True)
+        raise
+    print('导入音效包:', path, '->', name)
+    return name
+
+
+# 有些包是连着外层文件夹一起压的（zip 里是 包名/index.json），这种拆掉外层
+def _flatten_single_dir(dest):
+    entries = os.listdir(dest)
+    if len(entries) != 1:
         return
-    for i in result:
-      print(i)
-      i = str(i)
-      # 创建文件夹
-      name = os.path.basename(i)
-      if "." in name:
-          name = name.split(".")[0]
-      os.mkdir(f'./sounds/{name}')
-      shutil.unpack_archive(i, f'./sounds/{name}')
-      return name
+    inner = os.path.join(dest, entries[0])
+    if not os.path.isfile(os.path.join(inner, 'index.json')):
+        return
+    for item in os.listdir(inner):
+        shutil.move(os.path.join(inner, item), os.path.join(dest, item))
+    os.rmdir(inner)
+
+
+# index.json 里的 name 是导出方的包名，和这边的文件夹名不一致的话，
+# 之后改配置、删包都会照着 name 去找路径，找错就报错或者删错东西
+def _fix_pack_name(name, dest):
+    index_path = os.path.join(dest, 'index.json')
+    if not os.path.isfile(index_path):
+        raise ValueError('不是 KeySound 音效包（缺 index.json）')
+    with open(index_path, encoding='utf-8') as f:
+        info = json.load(f)
+    info['name'] = name
+    with open(index_path, 'w', encoding='utf-8') as f:
+        json.dump(info, f, ensure_ascii=False, indent=4)
+    # 空包导出时可能没有 sounds 目录，补上，不然后面添加音效会失败
+    os.makedirs(os.path.join(dest, 'sounds'), exist_ok=True)
 
 # 上传音效
 def upload_sound():

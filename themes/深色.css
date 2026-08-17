@@ -1,0 +1,42 @@
+/* 深色主题。
+   界面的颜色全部走 web/src/assets/css/index.css 里 :root 上的那套变量，
+   所以这里只要把变量重新赋一遍值就行，不用挨个组件去覆盖，也不用写 !important
+   （这个文件是运行时 load_css 追加到 head 的，排在打包出来的样式后面，
+   同优先级下后者生效）。 */
+
+:root {
+  --bg: #333333;
+  --fg: #e8eaed;
+  --border: rgba(255, 255, 255, 0.12);
+  --divider: rgba(255, 255, 255, 0.15);
+  --hover-bg: rgba(255, 255, 255, 0.12);
+  --hover-fg: #ffffff;
+  --active-bg: rgba(255, 255, 255, 0.2);
+  --nav-fg: #d6d9de;
+  --nav-active-bg: rgba(255, 255, 255, 0.2);
+  --nav-active-fg: #ffffff;
+  --chip-bg: rgba(255, 255, 255, 0.14);
+  --chip-fg: #f0f2f5;
+  --danger-bg: rgba(245, 108, 108, 0.22);
+  --danger-fg: #ff9b9b;
+  --item-bg: rgba(255, 255, 255, 0.1);
+  --item-hover-bg: rgba(255, 255, 255, 0.18);
+  --scrollbar: rgba(255, 255, 255, 0.25);
+
+  /* 键盘 */
+  --kb-deck: #3c4046;
+  --kb-key-bg: #4c525a;
+  --kb-key-fg: #e8eaed;
+  --kb-key-border: #575e67;
+  --kb-key-border-hover: #6c747e;
+  --kb-key-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
+  --kb-tip-bg: rgba(20, 22, 26, 0.9);
+  --kb-bind-bg: #33566e;
+  --kb-bind-fg: #d8ebf9;
+  --kb-bind-border: #4b7896;
+  /* 按下的键同样是反色，深色主题里就是亮键帽配深字 */
+  --kb-down-bg: #eceff4;
+  --kb-down-fg: #23272e;
+
+  --loader-fg: #ffffff;
+}

@@ -26,7 +26,7 @@ export default {
   justify-content: center;
   -webkit-justify-content: center;
   overflow: hidden;
-  background: #333;
+  background: var(--bg);
 }
 
 
@@ -37,27 +37,10 @@ export default {
   width: 3rem;
   height: 3rem;
   border-radius: 50%;
-  background: #ffffff;
-  background: -moz-linear-gradient(
-    left,
-    #ffffff 10%,
-    rgba(255, 255, 255, 0) 42%
-  );
-  background: -webkit-linear-gradient(
-    left,
-    #ffffff 10%,
-    rgba(255, 255, 255, 0) 42%
-  );
-  background: -o-linear-gradient(left, #ffffff 10%, rgba(255, 255, 255, 0) 42%);
-  background: -ms-linear-gradient(
-    left,
-    #ffffff 10%,
-    rgba(255, 255, 255, 0) 42%
-  );
   background: linear-gradient(
     to right,
-    #ffffff 10%,
-    rgba(255, 255, 255, 0) 42%
+    var(--loader-fg) 10%,
+    transparent 42%
   );
   position: relative;
   -webkit-animation: load3 1.4s infinite linear;
@@ -69,7 +52,7 @@ export default {
 .loader:before {
   width: 50%;
   height: 50%;
-  background: #ffffff;
+  background: var(--loader-fg);
   border-radius: 100% 0 0 0;
   position: absolute;
   top: 0;
@@ -77,7 +60,7 @@ export default {
   content: "";
 }
 .loader:after {
-  background: #333;
+  background: var(--bg);
   width: 75%;
   height: 75%;
   border-radius: 50%;

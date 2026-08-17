@@ -7,13 +7,15 @@
 
 <style lang="less" scoped>
 .about {
-  width: 95%;
+  flex: 1;
+  min-width: 0;
   height: 100%;
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  color: #fff;
+  background-color: var(--bg);
+  color: var(--fg);
   font-size: 20px;
   p{
     margin-bottom: 5px;

@@ -1,2 +1,0 @@
-"use strict";(self["webpackChunkweb"]=self["webpackChunkweb"]||[]).push([[594],{8411:function(e,n,u){u.r(n),u.d(n,{default:function(){return d}});var a=u(641);const t={class:"about"};function r(e,n){return(0,a.uX)(),(0,a.CE)("div",t,[...n[0]||(n[0]=[(0,a.Lk)("p",null,"keysound重植版1.0",-1)])])}var s=u(6262);const c={},o=(0,s.A)(c,[["render",r],["__scopeId","data-v-a0e9e36a"]]);var d=o}}]);
-//# sourceMappingURL=about.857fac63.js.map

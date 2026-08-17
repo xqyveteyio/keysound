@@ -1,70 +1,74 @@
 <template>
-  <div class="menu">
-    <div class="tools">
-    <div style="height: 100%">
-      <!-- 选择音效包 -->
-      <el-select
-        v-model="store.state.switch_state.choose_sound"
-        class="m-2"
-        placeholder="选择音效包"
-        size="large"
-        @change="update_switch_state_fn"
-      >
-        <el-option
-          v-for="item in store.state.sound_list"
-          :key="item"
-          :label="item"
-          :value="item"
-        />
-      </el-select>
+  <div class="toolbar">
+    <!-- 左边：当前音效包和播放模式，以及模式各自需要的参数 -->
+    <div class="toolbar__fields">
+      <div class="field">
+        <span class="field__label">音效包</span>
+        <el-select
+          v-model="store.state.switch_state.choose_sound"
+          placeholder="选择音效包"
+          class="field__control"
+          style="width: 168px"
+          @change="update_switch_state_fn"
+        >
+          <el-option
+            v-for="item in store.state.sound_list"
+            :key="item"
+            :label="item"
+            :value="item"
+          />
+        </el-select>
+      </div>
 
-      <!-- 选择模式 -->
-      <el-select
-        v-model="store.state.sound_info.mode"
-        class="m-2"
-        placeholder="选择模式"
-        size="large"
-        style="width: 120px; margin-left: 10px"
-        @change="update_sound_info_fn"
-        v-if="store.state.switch_state.choose_sound"
-      >
-        <el-option
-          v-for="item in ['随机', '重复', '指定', '单键随机']"
-          :key="item"
-          :label="item"
-          :value="item"
-        />
-      </el-select>
+      <div class="field" v-if="store.state.switch_state.choose_sound">
+        <span class="field__label">模式</span>
+        <el-select
+          v-model="store.state.sound_info.mode"
+          placeholder="选择模式"
+          class="field__control"
+          style="width: 108px"
+          @change="update_sound_info_fn"
+        >
+          <el-option
+            v-for="item in ['随机', '重复', '指定', '单键随机']"
+            :key="item"
+            :label="item"
+            :value="item"
+          />
+        </el-select>
+      </div>
 
-      <!-- 选择指定音效包 -->
-      <el-select
-        v-model="store.state.sound_info.repeat_sound"
-        class="m-2"
-        placeholder="选择重复音效"
-        size="large"
-        style="width: 150px; margin-left: 10px"
+      <!-- 重复模式：所有键都放这一个音 -->
+      <div class="field" v-if="store.state.sound_info.mode == '重复'">
+        <span class="field__label">音效</span>
+        <el-select
+          v-model="store.state.sound_info.repeat_sound"
+          placeholder="选择重复音效"
+          class="field__control"
+          style="width: 150px"
+          @change="update_sound_info_fn"
+        >
+          <el-option
+            v-for="item in store.state.sound_info.soundsList"
+            :key="item"
+            :label="item"
+            :value="item"
+          />
+        </el-select>
+      </div>
 
-        v-show="store.state.sound_info.mode == '重复'"
-    
-        @change="update_sound_info_fn"
-      >
-        <el-option
-          v-for="item in store.state.sound_info.soundsList"
-          :key="item"
-          :label="item"
-          :value="item"
-        />
-      </el-select>
-
-      <!-- 选择指定音效 -->
-      <span v-show="store.state.sound_info.mode == '指定'">
-        <span style="margin: 0px 10px">KEY: {{ store.state.choose_key }}</span>
+      <!-- 指定模式：先按一下键盘选中某个键，再给它挑音效 -->
+      <div class="field" v-if="store.state.sound_info.mode == '指定'">
+        <span class="field__label">键位</span>
+        <span class="key_chip" :class="{ is_empty: !store.state.choose_key }">
+          {{ store.state.choose_key || "按一下要设置的键" }}
+        </span>
         <el-select
           v-model="store.state.key_sound"
-          class="m-2"
           placeholder="选择音效"
-          size="large"
+          class="field__control"
           style="width: 150px"
+          :disabled="!store.state.choose_key"
           @change="changeCurrentSound"
         >
           <el-option
@@ -74,154 +78,70 @@
             :value="item"
           />
         </el-select>
-      </span>
-
-      <!-- 设置单键开关 -->
-      <span v-if="store.state.sound_info.mode == '单键随机'">
-        <span style="margin: 0px 10px">KEY: {{ store.state.choose_key }}</span>
-        <el-checkbox
-          style="color: #fff;"
-          v-model="store.state.onekey_flag"
-          @change="onekey_change"
-          label="随机开关"
-          size="large"
-        />
-      </span>
-
-      <!-- 清除按钮 -->
-      <el-tooltip
-        class="box-item"
-        effect="light"
-        content="清除键位绑定"
-        placement="top"
-        v-if="store.state.sound_info.mode == '指定' && store.state.key_sound"
-      >
-        <el-button
-          plain
-          style="margin-left: 10px; padding: 0px 10px"
+        <ToolButton
+          icon="eraser"
+          label="清除"
+          danger
+          :disabled="!store.state.key_sound"
           @click="clearCurrentSound"
-        >
-          <i style="font-size: 25px" class="iconfont icon-qingchu"></i>
-        </el-button>
-      </el-tooltip>
-      <el-tooltip
-        class="box-item"
-        effect="light"
-        content="导入音效文件"
-        placement="top"
-        v-if="store.state.switch_state.choose_sound"
-      >
-        <el-button
-          plain
-          style="margin-left: 10px; padding: 0px 10px"
-          @click="addSoundFile"
-        >
-          <i style="font-size: 25px" class="iconfont icon-daoru_o"></i>
-        </el-button>
-      </el-tooltip>
+        />
+      </div>
 
-      <el-tooltip
-        class="box-item"
-        effect="light"
-        content="删除音效包"
-        placement="top"
-        v-if="store.state.switch_state.choose_sound"
-      >
-        <el-button
-          plain
-          style="margin-left: 10px; padding: 0px 10px"
-          @click="delSoundInfo"
-        >
-          <i style="font-size: 25px" class="iconfont icon-shanchu"></i>
-        </el-button>
-      </el-tooltip>
+      <!-- 单键随机模式：只有勾上的键会响，且每次随机 -->
+      <div class="field" v-if="store.state.sound_info.mode == '单键随机'">
+        <span class="field__label">键位</span>
+        <span class="key_chip" :class="{ is_empty: !store.state.choose_key }">
+          {{ store.state.choose_key || "按一下要设置的键" }}
+        </span>
+        <el-checkbox
+          v-model="store.state.onekey_flag"
+          :disabled="!store.state.choose_key"
+          label="这个键随机发声"
+          @change="onekey_change"
+        />
+      </div>
     </div>
 
-    <div style="height: 100%">
-      <el-tooltip
-        class="box-item"
-        effect="light"
-        content="新建音效包"
-        placement="top"
-      >
-        <el-button
-          plain
-          style="margin-left: 10px; padding: 0px 10px"
-          @click="createsounds"
-        >
-          <i style="font-size: 25px" class="iconfont icon-xinjian"></i>
-        </el-button>
-      </el-tooltip>
-
-      <el-tooltip
-        class="box-item"
-        effect="light"
-        content="导入音效包"
-        placement="top"
-      >
-        <el-button
-          plain
-          style="margin-left: 10px; padding: 0px 10px"
-          @click="importSound"
-        >
-          <i
-            style="
-              font-size: 25px;
-              transform: rotate(180deg);
-              -webkit-transform: rotate(180deg);
-            "
-            class="iconfont icon-daochu"
-          ></i>
-        </el-button>
-      </el-tooltip>
-
-      <el-tooltip
-        class="box-item"
-        effect="light"
-        content="导出音效包"
-        placement="top"
-      >
-        <el-button
-          plain
-          style="margin-left: 10px; padding: 0px 10px"
-          @click="exportSound"
-        >
-          <i style="font-size: 25px" class="iconfont icon-daochu"></i>
-        </el-button>
-      </el-tooltip>
-
-      <!-- 上传云端 -->
-      <!-- <el-tooltip
-        class="box-item"
-        effect="light"
-        content="上传创意工坊"
-        placement="top"
-      >
-        <el-button
-          plain
-          style="margin-left: 10px; padding: 0px 10px"
-          @click="postcloud"
-        >
-          <i style="font-size: 34px" class="iconfont icon-yunshangchuan"></i>
-        </el-button>
-      </el-tooltip> -->
+    <!-- 右边：音效包和音效文件的增删导入导出 -->
+    <div class="toolbar__actions">
+      <ToolButton
+        icon="music"
+        label="添加音效"
+        :disabled="!store.state.switch_state.choose_sound"
+        @click="addSoundFile"
+      />
+      <span class="toolbar__divider"></span>
+      <ToolButton icon="folderPlus" label="新建包" @click="createsounds" />
+      <ToolButton icon="importPack" label="导入包" @click="importSound" />
+      <ToolButton
+        icon="exportPack"
+        label="导出包"
+        :disabled="!store.state.switch_state.choose_sound"
+        @click="exportSound"
+      />
+      <ToolButton
+        icon="trash"
+        label="删除包"
+        danger
+        :disabled="!store.state.switch_state.choose_sound"
+        @click="delSoundInfo"
+      />
     </div>
   </div>
-</div>
 </template>
 
 <script>
 import { useStore } from "vuex";
-import { reactive, toRefs } from "vue";
 import { ElMessage, ElMessageBox } from "element-plus";
+import ToolButton from "@/components/UI/ToolButton.vue";
 import {
   update_switch_state,
   add_sound,
   create_sound,
-  addStyle,
   delStyle,
 } from "@/utils/pyapi.js";
 export default {
+  components: { ToolButton },
   setup() {
     const store = useStore();
     // 更新当前音效包配置
@@ -307,8 +227,7 @@ export default {
 
     // 新建音效包
     const createsounds = () => {
-      // store.dispatch("createSound");
-      ElMessageBox.prompt("输入音效包名", "Tip", {
+      ElMessageBox.prompt("输入音效包名", "新建音效包", {
         confirmButtonText: "确定",
         cancelButtonText: "取消",
         inputPattern: /^[^`~!@#$%^&*()_+<>?:"{},.\/;'[\]]*$/,
@@ -350,7 +269,6 @@ export default {
           });
           // 删除音效包
           pywebview.api.delSoundInfo(store.state.sound_info.name).then((res) => {
-            // console.log(res);
             // 重新获取音效包列表
             store.dispatch("getSoundList");
             // 把当前选择的音效包清空
@@ -358,7 +276,7 @@ export default {
             // 清空音效包信息
             store.state.sound_info = {};
             // 更新选择的音效包
-            update_switch_state_fn()
+            update_switch_state_fn();
           });
           // 样式清空
           delStyle();
@@ -380,67 +298,52 @@ export default {
         });
         return;
       }
-      pywebview.api.exportSound(store.state.sound_info.name).then((res) => {
-        if (res) {
+      pywebview.api
+        .exportSound(store.state.sound_info.name)
+        .then((res) => {
+          if (res) {
+            ElMessage({
+              type: "success",
+              message: "导出成功",
+            });
+          } else {
+            ElMessage({
+              type: "error",
+              message: "导出失败",
+            });
+          }
+        })
+        .catch((err) => {
           ElMessage({
-            type: "success",
-            message: "导出成功",
-          });
-        } else {
-          ElMessage({
-            type: "error",
-            message: "导出失败",
-          });
-        }
-      }).catch((err) => {
-        ElMessage({
             type: "warning",
             message: "取消导出",
           });
-      });
+        });
     };
 
-    // 导入音效包
+    // 导入音效包（.bspack，也兼容老版本导出的 .zip）
     const importSound = () => {
-      pywebview.api.importSound().then((res) => {
-        if (res) {
+      pywebview.api.importSound().then((names) => {
+        // null 是在文件框里点了取消，不用提示
+        if (!names) {
+          return;
+        }
+        if (names.length) {
           ElMessage({
             type: "success",
-            message: "导入成功",
+            message: `导入成功：${names.join("、")}`,
           });
           // 重新获取音效包列表
           store.dispatch("getSoundList");
         } else {
           ElMessage({
             type: "error",
-            message: "导入失败",
+            message: "导入失败，请确认选的是 .bspack 音效包",
           });
         }
       });
     };
-    // 上传到云端
-    const postcloud = ()=>{
-      if (!store.state.switch_state.choose_sound) {
-        ElMessage({
-          type: "error",
-          message: "请先选择音效包",
-        });
-        return;
-      }
-      pywebview.api.upload_sound().then((res) => {
-        if (res) {
-          ElMessage({
-            type: "success",
-            message: "上传成功",
-          });
-        } else {
-          ElMessage({
-            type: "error",
-            message: "上传失败",
-          });
-        }
-      });
-    }
+
     return {
       store,
       update_switch_state_fn,
@@ -453,32 +356,79 @@ export default {
       delSoundInfo,
       exportSound,
       importSound,
-      postcloud
     };
   },
 };
 </script>
 
 <style lang="less" scoped>
-.menu {
-  width: 100%;
-  height: 50px;
-  // background: red;
-  border-bottom: 1px solid #ebeef5;
-  padding: 5px 10px;
-  .tools{
-    width: 100%;
-    height: 40px;
+.toolbar {
+  // 高度交给内容撑（按钮 54px + 上下 padding + 下边框），别写死数字：
+  // 之前写 64px，box-sizing 是 border-box，减掉 padding 和 1px 边框只剩 53px，
+  // 比按钮矮 1px，按钮底下那行字就被切掉一点
+  flex: none;
+  padding: 6px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom: 1px solid var(--border);
+
+  &__fields {
     display: flex;
-    justify-content: space-between;
     align-items: center;
+    gap: 14px;
+    // 控件多的时候先让左边这组收缩，别把右边的按钮挤出可视区
+    min-width: 0;
     overflow: hidden;
   }
+
+  &__actions {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    flex: none;
+  }
+
+  &__divider {
+    width: 1px;
+    height: 28px;
+    margin: 0 6px;
+    background: var(--divider);
+  }
 }
-/deep/.el-checkbox.el-checkbox--large{
-  height: auto !important;
+
+.field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: none;
+
+  &__label {
+    font-size: 12px;
+    opacity: 0.65;
+    white-space: nowrap;
+  }
 }
-/deep/.el-button{
-  height: 100% !important;
+
+.key_chip {
+  min-width: 42px;
+  padding: 4px 10px;
+  border-radius: 7px;
+  font-size: 13px;
+  text-align: center;
+  white-space: nowrap;
+  background: var(--chip-bg);
+  color: var(--chip-fg);
+
+  &.is_empty {
+    font-size: 12px;
+    opacity: 0.6;
+  }
+}
+
+// element-plus 的下拉默认会撑满父容器，这里统一交给外面的 style 定宽
+.field__control {
+  flex: none;
 }
 </style>

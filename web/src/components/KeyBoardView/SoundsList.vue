@@ -1,18 +1,25 @@
 <template>
   <div class="sound_list">
-    <div
-      class="item"
-      v-for="item in store.state.sound_info.soundsList"
-      :key="item"
-    >
-      <span>{{ item }}</span>
+    <div class="sound_list__empty" v-if="!store.state.sound_info.soundsList?.length">
+      {{
+        store.state.switch_state.choose_sound
+          ? "这个音效包还没有音频，点右上角“添加音效”导入 mp3 / wav"
+          : "先在左上角选一个音效包"
+      }}
+    </div>
+    <div class="sound_item" v-for="item in store.state.sound_info.soundsList" :key="item">
+      <span class="sound_item__name" :title="item">{{ item }}</span>
       <el-popconfirm
-        title="确定要删除?"
+        title="确定要删除这个音效文件?"
+        confirm-button-text="删除"
+        cancel-button-text="取消"
         @confirm="deleteSound(item)"
         @cancel="cancelDelete"
       >
         <template #reference>
-          <span>删除</span>
+          <button class="sound_item__del" type="button" title="删除">
+            <AppIcon name="trash" :size="15" />
+          </button>
         </template>
       </el-popconfirm>
     </div>
@@ -22,7 +29,9 @@
 <script>
 import { useStore } from "vuex";
 import { ElMessage } from "element-plus";
+import AppIcon from "@/components/UI/AppIcon.vue";
 export default {
+  components: { AppIcon },
   setup() {
     const store = useStore();
 
@@ -55,55 +64,82 @@ export default {
 
 <style lang="less" scoped>
 .sound_list {
-  height: calc(35% - 50px);
-  width: 395px;
-  // background-color: slateblue;
+  // 键盘那块按比例定高，剩下的富余高度全归这里，音效再多也在自己这块滚。
+  // 高度不跟着内容走，所以换音效包不会再把键盘挤高挤矮。
+  // 最矮留够两行（8 + 30 + 6 + 30 + 8）
+  flex: 1;
+  min-height: 82px;
+  padding: 8px 12px;
   display: flex;
   flex-wrap: wrap;
+  align-content: flex-start;
+  gap: 6px;
   overflow: auto;
-  padding-left: 5px;
+
   // 进度条样式
   &::-webkit-scrollbar {
-    width: 5px;
-    height: 5px;
+    width: 6px;
+    height: 6px;
   }
   &::-webkit-scrollbar-thumb {
-    background: #ccc;
-    border-radius: 5px;
+    background: var(--scrollbar);
+    border-radius: 3px;
   }
   &::-webkit-scrollbar-track {
-    background: #fff;
+    background: transparent;
   }
 
-  .item {
-    width: 190px;
-    padding: 5px;
-    overflow: hidden;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border-radius: 3px;
-    transition: all 0.2s;
-    &:hover {
-      background-color: #ccc;
-      color: #000;
+  &__empty {
+    width: 100%;
+    padding: 10px 2px;
+    font-size: 12px;
+    opacity: 0.55;
+  }
+}
+
+.sound_item {
+  max-width: 210px;
+  height: 30px;
+  padding: 0 4px 0 10px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  border-radius: 8px;
+  font-size: 13px;
+  background: var(--item-bg);
+  transition: background 0.15s;
+
+  &:hover {
+    background: var(--item-hover-bg);
+    .sound_item__del {
+      opacity: 1;
     }
-    span {
-      // background: slateblue;
-      &:first-child {
-        width: 90%;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-      }
-      &:last-child {
-        cursor: pointer;
-        // 不可换行
-        white-space: nowrap;
-        &:hover {
-          color: red;
-        }
-      }
+  }
+
+  &__name {
+    max-width: 160px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__del {
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.15s, background 0.15s, color 0.15s;
+
+    &:hover {
+      background: var(--danger-bg);
+      color: var(--danger-fg);
     }
   }
 }

@@ -11,8 +11,22 @@ IS_WINDOWS = sys.platform == 'win32'
 IS_LINUX = sys.platform.startswith('linux')
 IS_MACOS = sys.platform == 'darwin'
 
-# webview 的 GUI 后端：Windows 沿用 qt，Linux 用 gtk（PyGObject + WebKit2）
-WEBVIEW_GUI = 'qt' if IS_WINDOWS else 'gtk'
+# webview 的 GUI 后端。Linux 上两种都能用，默认 qt（QtWebEngine）：
+# 窗口装饰和页面渲染都跟 Chromium 一致，而且不会碰到 gtk 后端那两个坑
+# （Wayland 显式同步崩溃、evaluate_js 把脚本长度按字符数传给 WebKit 导致中文脚本被截断）。
+# 想对比外观可以用 KEYSOUND_WEBVIEW_GUI=gtk 切回 GTK + WebKit2。
+WEBVIEW_GUI = 'qt' if IS_WINDOWS else os.environ.get('KEYSOUND_WEBVIEW_GUI', 'qt')
+
+# Wayland 下 WebKit 的 dmabuf 渲染器会给窗口的 wl_surface 挂上显式同步（wp_linux_drm_syncobj），
+# 而 GTK3 自己画窗口边框用的是 shm 缓冲，合成器认为违反协议就断开连接，
+# 表现是启动没几秒就 "Error 71 (Protocol error) dispatching to Wayland display" 整个进程退出。
+# 关掉 dmabuf 渲染器（改走 shm）可以绕开，代价是渲染慢一点。
+# 已经手动设过这个变量就不覆盖，方便自己试别的取值。
+# 不只在 WEBVIEW_GUI == 'gtk' 时设：Qt 装不全的时候 pywebview 会自己回退到 gtk，
+# 这个变量对 Qt 后端没有任何影响，索性一直设上。
+if (IS_LINUX and os.environ.get('WAYLAND_DISPLAY')
+        and 'WEBKIT_DISABLE_DMABUF_RENDERER' not in os.environ):
+    os.environ['WEBKIT_DISABLE_DMABUF_RENDERER'] = '1'
 
 # 单实例锁的句柄要一直被引用着，否则被回收后锁就没了
 _instance_lock = None
@@ -74,7 +88,7 @@ def set_linux_autostart(enabled):
         '[Desktop Entry]',
         'Type=Application',
         'Name=KeySound',
-        f'Exec={sys.executable} {os.path.join(work_dir, "KeySound.py")}',
+        f'Exec={sys.executable} {os.path.join(work_dir, "main.py")}',
         f'Path={work_dir}',
         f'Icon={os.path.join(work_dir, "logo.ico")}',
         'Terminal=false',

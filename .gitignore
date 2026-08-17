@@ -1,0 +1,10 @@
+__pycache__/
+*.py[cod]
+
+# 虚拟环境（python -m venv 建的目录自带 .gitignore，这里是给别的命名兜底）
+venv/
+.venv/
+env/
+
+# 运行时产生的临时文件
+tmp/

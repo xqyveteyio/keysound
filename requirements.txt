@@ -12,7 +12,6 @@ pywin32>=305 ; sys_platform == "win32"
 pystray>=0.19 ; sys_platform == "win32"
 pynput>=1.7 ; sys_platform == "win32"
 
-# Linux：pywebview 用 GTK(WebKit2 4.1) 内核，音效走系统 GStreamer，托盘走 AppIndicator
-# PyGObject / pycairo 建议直接装发行版的包（见 README），所以这里不写 pywebview[gtk]，
-# 免得 pip 去源码编译 PyGObject
-pywebview>=6.0 ; sys_platform == "linux"
+# Linux：pywebview 默认用 Qt(QtWebEngine) 内核，qt6 这个 extra 会带上 QtPy + PyQt6 + PyQt6-WebEngine，
+# 托盘走 QSystemTrayIcon，音效走系统 GStreamer（gi，装发行版的包，见 README）
+pywebview[qt6]>=6.0 ; sys_platform == "linux"

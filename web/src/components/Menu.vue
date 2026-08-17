@@ -1,67 +1,65 @@
 <template>
   <div class="menu">
-    <router-link class="item" to="/keyboard"
-      ><i class="iconfont icon-jianpan"></i
-    ></router-link>
-    <!-- <router-link class="item" to="/mouse"
-      ><i class="iconfont icon-mouseM"></i
-    ></router-link> -->
-    <!-- <router-link class="item" to="/sounds">
-      <i class="iconfont icon-shengyin"></i>
-    </router-link> -->
-    <router-link class="item" to="/setup">
-      <i class="iconfont icon-shezhi"></i>
+    <router-link class="item" to="/keyboard">
+      <AppIcon name="keyboard" :size="22" />
+      <span class="item__label">键盘</span>
     </router-link>
-    <router-link class="item" to="/about"
-      ><i class="iconfont icon-guanyu_o"></i
-    ></router-link>
-    <!-- <router-link class="item" to="/vuex"
-      ><i class="iconfont icon-guanyu_o"></i
-    ></router-link> -->
+    <router-link class="item" to="/setup">
+      <AppIcon name="settings" :size="22" />
+      <span class="item__label">设置</span>
+    </router-link>
+    <router-link class="item" to="/about">
+      <AppIcon name="info" :size="22" />
+      <span class="item__label">关于</span>
+    </router-link>
   </div>
 </template>
 
 <script>
-import "@/assets/font/iconfont.css";
-export default {};
+import AppIcon from "@/components/UI/AppIcon.vue";
+export default {
+  components: { AppIcon },
+};
 </script>
 
 <style lang="less" scoped>
 .menu {
-  width: 5%;
+  width: 62px;
+  flex: none;
   height: 100%;
-  // background: red;
+  padding: 8px 6px;
   display: flex;
   flex-direction: column;
-  // justify-content: center;
   align-items: center;
-  border-right: 1px solid #fff;
+  gap: 4px;
+  border-right: 1px solid var(--border);
+
   .item {
     width: 100%;
-    height: 50px;
-    text-decoration: none;
+    padding: 8px 0 7px;
     display: flex;
-    justify-content: center;
+    flex-direction: column;
     align-items: center;
+    gap: 4px;
+    border-radius: 10px;
+    color: var(--nav-fg);
+    text-decoration: none;
     cursor: pointer;
-    margin-bottom: 10px;
+    transition: background 0.15s, color 0.15s;
+
+    &__label {
+      font-size: 11px;
+      line-height: 1;
+    }
+
     &:hover {
-      background: #fff;
-      i {
-        color: #333;
-      }
+      background: var(--hover-bg);
+      color: var(--hover-fg);
     }
-    // border-radius: 10px;
-    i {
-      font-size: 30px;
-      color: #fff;
-    }
-    transition: all 0.2s;
+
     &.router-link-exact-active {
-      background: #fff;
-      i {
-        color: #333;
-      }
+      background: var(--nav-active-bg);
+      color: var(--nav-active-fg);
     }
   }
 }
