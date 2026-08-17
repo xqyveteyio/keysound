@@ -5,10 +5,6 @@
     "single_key": [],
     "assigned_sounds": [
         {
-            "key": "Q",
-            "sound": "Q.mp3"
-        },
-        {
             "key": "W",
             "sound": "W.mp3"
         },
@@ -87,6 +83,10 @@
         {
             "key": "/ ?",
             "sound": "slash.mp3"
+        },
+        {
+            "key": "Q",
+            "sound": "Q.mp3"
         }
     ],
     "soundsList": [
@@ -101,7 +101,6 @@
         "P.mp3",
         "Q.mp3",
         "R.mp3",
-        "slash.mp3",
         "T.mp3",
         "U.mp3",
         "V.mp3",
@@ -110,6 +109,7 @@
         "Y.mp3",
         "Z.mp3",
         "[.mp3",
-        "].mp3"
+        "].mp3",
+        "slash.mp3"
     ]
 }

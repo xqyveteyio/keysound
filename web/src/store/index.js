@@ -18,6 +18,7 @@ export default createStore({
       auto_run: false,
       font: "",
       theme: "",
+      stop_hotkey: "",
     },
     sound_list: [], // 音效包列表
     sound_info: {

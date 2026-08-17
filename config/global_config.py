@@ -12,6 +12,8 @@ class GlobalConfig:
         self.auto_run = False
         self.font = "微软雅黑"
         self.theme = "默认"
+        # 停止播放的快捷键，形如 "Ctrl+Alt+S"，空字符串表示没设
+        self.stop_hotkey = ""
         # 查看是否有config.json
         if not os.path.exists(f'config.json'):
             # 没有就创建

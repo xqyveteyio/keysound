@@ -133,6 +133,7 @@ def create_window_():
                       get_all_switch_state,
                       update_all_switch_state,
                       inject_theme,
+                      set_recording_hotkey,
                       list_plugins,
                       get_plugin,
                       delete_plugin,

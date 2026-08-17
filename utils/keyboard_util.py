@@ -1,7 +1,7 @@
 from utils.keyfilter import keyfilter
 import threading
 from config.window_config import window_config_obj
-from utils.sound_util import playSound
+from utils.sound_util import playSound, stopSound
 import multiprocessing
 from config.global_config import all_sounds, global_config_obj
 from utils.platform_util import IS_WINDOWS
@@ -10,6 +10,45 @@ if IS_WINDOWS:
     import keyboard
 
 keyList = {}
+
+# 设置页正在录快捷键时，按键既不出声也不触发快捷键
+_recording_hotkey = False
+
+# 快捷键里的修饰键不分左右，两个 Ctrl 都算 Ctrl
+_MODIFIER_ALIAS = {
+    'L Ctrl': 'Ctrl',
+    'R Ctrl': 'Ctrl',
+    'L Alt': 'Alt',
+    'R Alt': 'Alt',
+    'L Shift': 'Shift',
+    'R Shift': 'Shift',
+}
+_MODIFIERS = frozenset(('ctrl', 'alt', 'shift', 'win'))
+
+
+# 给设置页用：录快捷键期间把按键处理停掉
+def set_recording_hotkey(flag):
+    global _recording_hotkey
+    _recording_hotkey = bool(flag)
+    return _recording_hotkey
+
+
+def _norm_key(key):
+    return _MODIFIER_ALIAS.get(key, key).lower()
+
+
+# 刚按下的这个键是不是配置里的停止快捷键。
+# 快捷键存成 "Ctrl+Alt+S"：最后一段是主键，前面几段是要同时按住的修饰键
+def _is_stop_hotkey(key):
+    hotkey = (global_config_obj.__dict__.get('stop_hotkey') or '').strip()
+    parts = [p for p in (s.strip() for s in hotkey.split('+')) if p]
+    if not parts:
+        return False
+    if _norm_key(key) != _norm_key(parts[-1]):
+        return False
+    # 修饰键要不多不少：配了 Ctrl+Alt+S 的话，多按着一个 Shift 就是另一个组合了
+    held = {_norm_key(k) for k, is_down in keyList.items() if is_down}
+    return {_norm_key(m) for m in parts[:-1]} == held & _MODIFIERS
 
 # 启动键盘监听线程
 def on_key_event():
@@ -37,11 +76,19 @@ def web_key_event(key, is_down):
 
 # 按键事件的公共处理：出声 + 刷新键盘 UI
 def handle_key(key, is_down, update_ui):
+    if _recording_hotkey:
+        return
     if key not in keyList:
         keyList[key] = False
     if is_down and keyList[key] == False:
         print(key, ' is down')
         keyList[key] = True
+        if _is_stop_hotkey(key):
+            stopSound()
+            # 快捷键本身不再触发音效，不然刚停就又响一个
+            if update_ui:
+                threading.Thread(target=downKey, args=(key,)).start()
+            return
         if global_config_obj.single_flag:
             global_config_obj.break_flag = False
         if global_config_obj.now_play and global_config_obj.single_flag:
