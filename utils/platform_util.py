@@ -11,11 +11,13 @@ IS_WINDOWS = sys.platform == 'win32'
 IS_LINUX = sys.platform.startswith('linux')
 IS_MACOS = sys.platform == 'darwin'
 
-# webview 的 GUI 后端。Linux 上两种都能用，默认 qt（QtWebEngine）：
-# 窗口装饰和页面渲染都跟 Chromium 一致，而且不会碰到 gtk 后端那两个坑
-# （Wayland 显式同步崩溃、evaluate_js 把脚本长度按字符数传给 WebKit 导致中文脚本被截断）。
-# 想对比外观可以用 KEYSOUND_WEBVIEW_GUI=gtk 切回 GTK + WebKit2。
-WEBVIEW_GUI = 'qt' if IS_WINDOWS else os.environ.get('KEYSOUND_WEBVIEW_GUI', 'qt')
+# webview 的 GUI 后端。
+# Windows 上留空让 pywebview 自己挑，也就是 EdgeChromium（WebView2）：系统自带、
+# 内核跟得上，不用为了一个窗口把整套 PyQt5 + QtWebEngine 拖进来。
+# Linux 上没有 WebView2，固定用 qt（QtWebEngine）：窗口装饰和页面渲染都跟 Chromium 一致，
+# 而且不会碰到 gtk 后端那两个坑（Wayland 显式同步崩溃、evaluate_js 把脚本长度按字符数
+# 传给 WebKit 导致中文脚本被截断）。想试 GTK + WebKit2 就把这里改成 'gtk'。
+WEBVIEW_GUI = None if IS_WINDOWS else 'qt'
 
 # Wayland 下 WebKit 的 dmabuf 渲染器会给窗口的 wl_surface 挂上显式同步（wp_linux_drm_syncobj），
 # 而 GTK3 自己画窗口边框用的是 shm 缓冲，合成器认为违反协议就断开连接，

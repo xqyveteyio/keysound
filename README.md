@@ -22,6 +22,9 @@ venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
+窗口走 pywebview 默认的 EdgeChromium 内核（WebView2），Win10 1803 之后系统自带，不用额外装
+Qt；万一提示找不到内核，装一下微软的 [WebView2 运行时](https://developer.microsoft.com/microsoft-edge/webview2/)。
+
 ### Linux
 
 窗口用 pywebview 的 Qt(QtWebEngine) 内核，PyQt6 有现成的轮子，pip 装就行。
@@ -42,7 +45,7 @@ pip install -r requirements.txt
 
 托盘图标是 `QSystemTrayIcon`，走 StatusNotifierItem，**GNOME 需要装 AppIndicator 扩展**才能看到图标；托盘建不起来的话程序会退化成关闭窗口即退出。
 
-也可以用 `KEYSOUND_WEBVIEW_GUI=gtk` 换成 GTK + WebKit2 内核（托盘会跟着换成 AppIndicator），
+把 `utils/platform_util.py` 里的 `WEBVIEW_GUI` 改成 `'gtk'` 可以换成 GTK + WebKit2 内核（托盘会跟着换成 AppIndicator），
 额外需要 `webkit2gtk4.1`、`libayatana-appindicator-gtk3`（Debian 系是 `gir1.2-webkit2-4.1`、`gir1.2-ayatanaappindicator3-0.1`）。
 不过 GTK 这条路有两个上游问题：Wayland 下 WebKit 的 dmabuf 渲染和 GTK3 的 shm 缓冲会撞显式同步协议，
 启动几秒就 `Error 71 (Protocol error)` 退出（代码里靠 `WEBKIT_DISABLE_DMABUF_RENDERER=1` 绕开）；

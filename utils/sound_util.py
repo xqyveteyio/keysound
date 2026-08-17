@@ -33,7 +33,7 @@ def exportSound(name):
     if not result:
         return False
     target = result if isinstance(result, str) else result[0]
-    # Qt 的保存框不会照着筛选器自动补后缀，用户删了得给他加回来
+    # 有的保存框（Linux 的 Qt）不会照着筛选器自动补后缀，用户删了得给他加回来
     if os.path.splitext(target)[1].lower() not in (PACK_EXT, '.zip'):
         target += PACK_EXT
     # make_archive 只认 .zip 后缀（自己往 base_name 后面接），

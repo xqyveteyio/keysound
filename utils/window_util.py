@@ -17,7 +17,6 @@ if IS_WINDOWS:
     import winreg
     import pystray
     from pystray import MenuItem
-    from PyQt5 import QtGui
 elif WEBVIEW_GUI == 'gtk':
     # 托盘要和 webview 共用同一个事件循环，所以跟着后端选实现
     from utils.tray_linux import start_tray
