@@ -1,0 +1,18 @@
+# 通用依赖
+Pillow>=9.0
+requests>=2.28
+
+# Windows：保持原有实现（全局键盘钩子、playsound、pystray 托盘、注册表自启）
+# pywebview 用 Qt 内核，qt5 这个 extra 会带上 QtPy + PyQt5 + PyQtWebEngine
+pywebview[qt5]>=6.0 ; sys_platform == "win32"
+keyboard>=0.13.5 ; sys_platform == "win32"
+playsound==1.2.2 ; sys_platform == "win32"
+tendo>=0.3.0 ; sys_platform == "win32"
+pywin32>=305 ; sys_platform == "win32"
+pystray>=0.19 ; sys_platform == "win32"
+pynput>=1.7 ; sys_platform == "win32"
+
+# Linux：pywebview 用 GTK(WebKit2 4.1) 内核，音效走系统 GStreamer，托盘走 AppIndicator
+# PyGObject / pycairo 建议直接装发行版的包（见 README），所以这里不写 pywebview[gtk]，
+# 免得 pip 去源码编译 PyGObject
+pywebview>=6.0 ; sys_platform == "linux"

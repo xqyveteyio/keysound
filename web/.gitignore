@@ -2,6 +2,10 @@
 node_modules
 /dist
 
+# yarn (nodeLinker: node-modules，只保留 yarn.lock)
+.yarn/*
+.pnp.*
+
 
 # local env files
 .env.local

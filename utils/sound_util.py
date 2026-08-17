@@ -1,6 +1,6 @@
 from config.global_config import global_config_obj
 from config.sound_config import SoundConfig
-import playsound
+from utils import audio_util
 import random
 import os
 import json
@@ -65,7 +65,8 @@ def upload_sound():
 
 
 def play_sound(path: str):
-    playsound.playsound(path)
+    # 打断模式下最多同时响 3 个音，和 Windows 那边多进程打断的逻辑保持一致
+    audio_util.play_file(path, max_concurrent=3 if global_config_obj.break_flag else 0)
 
 def single_key_switch(key, flag):
     sound_config_obj = SoundConfig.read_from_file(global_config_obj.choose_sound)
