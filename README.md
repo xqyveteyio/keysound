@@ -85,6 +85,7 @@ yarn build
 | 托盘图标 | `pystray` | `QSystemTrayIcon`（GNOME 需要 AppIndicator 扩展） |
 | 关闭窗口 | 销毁窗口，托盘点“显示”重建 | 只隐藏窗口（`webview.start()` 不能重复调用），托盘点“显示”恢复 |
 | 鼠标音效 | `pynput` | 不支持 |
+| 停止播放 | 不支持（`playsound` 没有中止接口） | 支持，掐掉正在响的所有音效 |
 | 开机自启 | 写注册表 | 写 `~/.config/autostart/keysound.desktop` |
 
 Wayland 出于安全设计不给应用做全局键盘监听（X11 下理论上可以，但需要 root 读 `/dev/input`），所以 Linux 版退化成由网页把窗口内的 `keydown`/`keyup` 回传给 Python 播放音效，代码在 `utils/web_key.py`。

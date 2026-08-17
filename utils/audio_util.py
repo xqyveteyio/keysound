@@ -119,6 +119,21 @@ def _unregister(sound):
             _playing.remove(sound)
 
 
+# 掐掉所有正在响的声音，返回掐掉了几个。
+# Windows 走的是 playsound，它没有中止接口，所以这个函数在 Windows 上是空转
+def stop_all():
+    with _playing_lock:
+        # 先摘出来再 stop，别在锁里等 stop
+        sounds = list(_playing)
+        _playing.clear()
+    for sound in sounds:
+        try:
+            sound.stop()
+        except Exception as e:
+            print('停止播放出错:', e)
+    return len(sounds)
+
+
 # 播放一个音频文件，播完（或被打断）才返回
 # max_concurrent 大于 0 时限制同时播放的数量，超了就掐掉最早的那个
 def play_file(path: str, max_concurrent: int = 0):

@@ -122,6 +122,8 @@ def create_window_():
                        selectSound,
                        initUI,
                        playSound,
+                       previewSound,
+                       stopSound,
                        exportSound,
                        importSound,
                        single_key_switch,

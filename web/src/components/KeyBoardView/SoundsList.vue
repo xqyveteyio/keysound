@@ -8,7 +8,14 @@
       }}
     </div>
     <div class="sound_item" v-for="item in store.state.sound_info.soundsList" :key="item">
-      <span class="sound_item__name" :title="item">{{ item }}</span>
+      <button
+        class="sound_item__name"
+        type="button"
+        :title="`试听 ${item}`"
+        @click="previewSound(item)"
+      >
+        {{ item }}
+      </button>
       <el-popconfirm
         title="确定要删除这个音效文件?"
         confirm-button-text="删除"
@@ -35,6 +42,11 @@ export default {
   setup() {
     const store = useStore();
 
+    // 试听：点文件名直接放一遍，左侧“停止”可以掐掉
+    const previewSound = (sound) => {
+      pywebview.api.previewSound(sound);
+    };
+
     // 删除音效
     const deleteSound = (sound) => {
       // 删除音效
@@ -55,6 +67,7 @@ export default {
     };
     return {
       store,
+      previewSound,
       deleteSound,
       cancelDelete,
     };
@@ -121,6 +134,14 @@ export default {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    // 是个按钮（点一下试听），但要看着还是一段文字
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: inherit;
+    font-family: inherit;
+    font-size: inherit;
+    cursor: pointer;
   }
 
   &__del {

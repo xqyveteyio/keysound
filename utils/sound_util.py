@@ -140,6 +140,27 @@ def play_sound(path: str):
     # 打断模式下最多同时响 3 个音，和 Windows 那边多进程打断的逻辑保持一致
     audio_util.play_file(path, max_concurrent=3 if global_config_obj.break_flag else 0)
 
+# 试听单个音效文件：音效列表里点一下文件名就走这里
+def previewSound(name):
+    pack = global_config_obj.choose_sound
+    if not pack or not name:
+        return False
+    # name 是页面传过来的，只取文件名部分，别让它跑出音效包目录
+    path = f'./sounds/{pack}/sounds/{os.path.basename(str(name))}'
+    if not os.path.isfile(path):
+        print('音效文件不存在:', path)
+        return False
+    play_sound(path)
+    return True
+
+
+# 立刻停掉所有正在响的音效，按键触发的和试听的都算
+def stopSound():
+    count = audio_util.stop_all()
+    print('停止播放，掐掉', count, '个音效')
+    return count
+
+
 def single_key_switch(key, flag):
     sound_config_obj = SoundConfig.read_from_file(global_config_obj.choose_sound)
     if flag:
