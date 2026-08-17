@@ -11,12 +11,6 @@
 #include <audioenginebaseapo.h>
 #include <new>
 
-// IsEqual 的输出标志。SDK 里同名常量的定义形式（宏还是枚举）各版本不一样，
-// 用自己的名字避免撞车，取值和文档一致
-static const DWORD kMtEqualFormatTypes    = 0x00000001;
-static const DWORD kMtEqualFormatData     = 0x00000002;
-static const DWORD kMtEqualFormatUserData = 0x00000004;
-
 static const GUID kSubtypeIeeeFloat = { STATIC_KSDATAFORMAT_SUBTYPE_IEEE_FLOAT };
 
 class CApoMediaType : public IAudioMediaType {
@@ -104,14 +98,16 @@ public:
             return E_POINTER;
         }
         if (rhs->wFormatTag == format_->wFormatTag) {
-            *flags |= kMtEqualFormatTypes;
+            *flags |= AUDIOMEDIATYPE_EQUAL_FORMAT_TYPES;
         }
         if (rhs->cbSize == format_->cbSize &&
             memcmp(rhs, format_, sizeof(WAVEFORMATEX) + format_->cbSize) == 0) {
-            *flags |= kMtEqualFormatData | kMtEqualFormatUserData;
+            *flags |= AUDIOMEDIATYPE_EQUAL_FORMAT_DATA | AUDIOMEDIATYPE_EQUAL_FORMAT_USER_DATA;
         }
         // 文档约定：完全一样返回 S_OK，有差异返回 S_FALSE
-        const DWORD all = kMtEqualFormatTypes | kMtEqualFormatData | kMtEqualFormatUserData;
+        const DWORD all = AUDIOMEDIATYPE_EQUAL_FORMAT_TYPES |
+                          AUDIOMEDIATYPE_EQUAL_FORMAT_DATA |
+                          AUDIOMEDIATYPE_EQUAL_FORMAT_USER_DATA;
         return (*flags == all) ? S_OK : S_FALSE;
     }
 

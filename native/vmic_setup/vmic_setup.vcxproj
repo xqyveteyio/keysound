@@ -15,7 +15,7 @@
     <VCProjectVersion>17.0</VCProjectVersion>
     <ProjectGuid>{2B95F0C7-6D18-4E52-8A47-1F0C33D9E5A2}</ProjectGuid>
     <RootNamespace>vmic_setup</RootNamespace>
-    <WindowsTargetPlatformVersion>$(LatestTargetPlatformVersion)</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
 
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />

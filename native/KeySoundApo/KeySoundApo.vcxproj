@@ -16,7 +16,9 @@
     <VCProjectVersion>17.0</VCProjectVersion>
     <ProjectGuid>{7C1D2E4A-5B33-4A21-9C0E-9D2F7A61B401}</ProjectGuid>
     <RootNamespace>KeySoundApo</RootNamespace>
-    <WindowsTargetPlatformVersion>$(LatestTargetPlatformVersion)</WindowsTargetPlatformVersion>
+    <!-- 写 10.0 表示「用装了的最新那个 Win10/11 SDK」，别写死具体版本号，
+         不然换台机器或者换个 CI 镜像就找不到 SDK 了 -->
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
 
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
