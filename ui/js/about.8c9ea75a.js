@@ -1,2 +1,2 @@
 "use strict";(self["webpackChunkweb"]=self["webpackChunkweb"]||[]).push([[594],{959:function(e,n,u){u.r(n),u.d(n,{default:function(){return o}});var t=u(641);const r={class:"about"};function s(e,n){return(0,t.uX)(),(0,t.CE)("div",r,[...n[0]||(n[0]=[(0,t.Lk)("p",null,"keysound重植版1.0",-1)])])}var a=u(6262);const c={},d=(0,a.A)(c,[["render",s],["__scopeId","data-v-373ed278"]]);var o=d}}]);
-//# sourceMappingURL=about.d01f1da9.js.map
+//# sourceMappingURL=about.8c9ea75a.js.map

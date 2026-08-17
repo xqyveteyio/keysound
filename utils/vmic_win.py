@@ -233,11 +233,16 @@ def _decode(path, sample_rate, channels):
     if cached is not None:
         return cached
 
+    # 不用 decode_file()：它把文件名按 sys.getfilesystemencoding()（Windows 上是 utf-8）
+    # 编码后交给 C 那边的窄字符 fopen，而 fopen 认的是系统代码页，
+    # 路径里有中文就报 MA_DOES_NOT_EXIST。自己读成 bytes 再内存解码就没这问题
     try:
-        decoded = miniaudio.decode_file(path,
-                                        output_format=miniaudio.SampleFormat.FLOAT32,
-                                        nchannels=channels,
-                                        sample_rate=sample_rate)
+        with open(path, 'rb') as f:
+            data = f.read()
+        decoded = miniaudio.decode(data,
+                                   output_format=miniaudio.SampleFormat.FLOAT32,
+                                   nchannels=channels,
+                                   sample_rate=sample_rate)
     except Exception as e:
         print('虚拟麦克风解码失败:', path, e)
         return None

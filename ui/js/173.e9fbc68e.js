@@ -1,2 +1,2 @@
 "use strict";(self["webpackChunkweb"]=self["webpackChunkweb"]||[]).push([[173],{3173:function(t,n,u){u.r(n),u.d(n,{default:function(){return k}});var e=u(641),c=u(33);function o(t,n,u,o,r,s){return(0,e.uX)(),(0,e.CE)("div",null,[n[1]||(n[1]=(0,e.Lk)("h1",null,"用于让 几百年没用vuex 的bojak 复习使用的 页面",-1)),(0,e.Lk)("h2",null,(0,c.v_)(o.state.count),1),(0,e.Lk)("button",{onClick:n[0]||(n[0]=(...t)=>o.count_&&o.count_(...t))},"+ 1")])}var r=u(6278),s={setup(){const t=(0,r.Pj)(),n=t.state,u=()=>{t.commit("setMenu","vuex")};return{count_:u,state:n}}},a=u(6262);const l=(0,a.A)(s,[["render",o]]);var k=l}}]);
-//# sourceMappingURL=173.8457832f.js.map
+//# sourceMappingURL=173.e9fbc68e.js.map

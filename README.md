@@ -25,6 +25,17 @@ pip install -r requirements.txt
 窗口走 pywebview 默认的 EdgeChromium 内核（WebView2），Win10 1803 之后系统自带，不用额外装
 Qt；万一提示找不到内核，装一下微软的 [WebView2 运行时](https://developer.microsoft.com/microsoft-edge/webview2/)。
 
+装完依赖还要跑一次：
+
+```bat
+python fix_playsound.py
+```
+
+playsound 1.2.2 内部用的是 ANSI 的 `mciSendStringA`，命令字符串却按 UTF-8 编码，所以路径里
+只要有中文（音效包名基本都是中文）就放不出声，报的还是个把真实错误盖掉的 `UnicodeDecodeError`。
+这个脚本会找到**当前这个 Python** 装的 playsound，备份一份再把编码改成系统代码页。
+换虚拟环境要重跑；想还原用 `python fix_playsound.py --restore`。
+
 ### Linux
 
 窗口用 pywebview 的 Qt(QtWebEngine) 内核，PyQt6 有现成的轮子，pip 装就行。
