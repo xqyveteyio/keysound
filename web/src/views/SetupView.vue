@@ -59,7 +59,7 @@
           <div class="setup_row__text">
             <span class="setup_row__name">虚拟麦克风输出</span>
             <span class="setup_row__desc">
-              把音效混进麦克风信号，语音软件里的其他人也能听到。需要管理员权限，开关时会短暂中断系统音频
+              把音效混进麦克风信号，语音软件里的其他人也能听到。挂在应用拿到数据之前，厂商原来的效果不动。需要管理员权限，开关时会短暂中断系统音频。用 RAW 模式打开麦克风的软件听不到叠进去的音效
             </span>
             <span v-if="vmicHint" class="setup_row__desc setup_row__warn">{{ vmicHint }}</span>
           </div>
@@ -90,27 +90,6 @@
               :label="device.name + (device.active ? '' : '（未连接）')"
               :value="device.id"
             ></el-option>
-          </el-select>
-        </div>
-
-        <div class="setup_row">
-          <div class="setup_row__text">
-            <span class="setup_row__name">挂载槽位</span>
-            <span class="setup_row__desc">
-              离硬件由近到远是 EFX → MFX → SFX。语音软件用 RAW 模式打开麦克风时只有靠前的槽位还生效，
-              听不到就往前换一个
-            </span>
-          </div>
-          <el-select
-            placeholder="请选择"
-            style="width: 220px"
-            :disabled="vmicBusy || store.state.switch_state.virtual_mic"
-            v-model="store.state.switch_state.virtual_mic_slot"
-            @change="sw"
-          >
-            <el-option label="EFX（端点效果，推荐）" value="efx"></el-option>
-            <el-option label="MFX（模式效果）" value="mfx"></el-option>
-            <el-option label="SFX（流效果）" value="sfx"></el-option>
           </el-select>
         </div>
 
@@ -247,8 +226,14 @@ export default {
     };
 
     // 录制中切走页面或关掉窗口，得把监听和那个标记收回来
-    onDeactivated(stopRecord);
-    onUnmounted(stopRecord);
+    onDeactivated(() => {
+      stopRecord();
+      stopVmicWatch();
+    });
+    onUnmounted(() => {
+      stopRecord();
+      stopVmicWatch();
+    });
 
     // 虚拟麦克风开关整块跟着 virtual_mic_status().supported 走
     const vmic = ref({ supported: false });
@@ -280,6 +265,26 @@ export default {
       }
     };
 
+    // 设置页被 keep-alive 挂着，人停在这一页时组件不会重新激活。
+    // 采集流是别的软件打开的，不轮询的话心跳已经在跳，提示还停在进页面那一下
+    let vmicTimer = 0;
+    const pollVmic = async () => {
+      if (vmicBusy.value || !store.state.switch_state.virtual_mic) return;
+      await apiReady();
+      const status = await pywebview.api.virtual_mic_status();
+      if (status) vmic.value = status;
+    };
+    const startVmicWatch = () => {
+      if (vmicTimer) clearInterval(vmicTimer);
+      refreshVmic();
+      vmicTimer = window.setInterval(pollVmic, 1000);
+    };
+    const stopVmicWatch = () => {
+      if (!vmicTimer) return;
+      clearInterval(vmicTimer);
+      vmicTimer = 0;
+    };
+
     const vmicHint = computed(() => {
       const status = vmic.value;
       if (!status.supported) return "";
@@ -289,7 +294,7 @@ export default {
       if (status.needs_repair)
         return "注册表里的配置不见了（音频驱动重装或系统更新会冲掉），关掉再打开一次就能恢复";
       if (status.enabled && !status.apo_running)
-        return "还没检测到 APO 被加载，打开语音软件的麦克风测试让采集流跑起来再看";
+        return "麦克风这会儿没在采集。打开语音软件的麦克风测试，这里大约一秒后会变成已生效";
       if (status.enabled && status.apo_running)
         return `已生效，当前格式 ${status.sample_rate} Hz / ${status.channels} 声道`;
       return "";
@@ -306,10 +311,7 @@ export default {
             ElMessage({ message: "先选一只麦克风", type: "warning" });
             return;
           }
-          result = await pywebview.api.enable_virtual_mic(
-            device,
-            store.state.switch_state.virtual_mic_slot
-          );
+          result = await pywebview.api.enable_virtual_mic(device);
         } else {
           result = await pywebview.api.disable_virtual_mic();
         }
@@ -326,8 +328,8 @@ export default {
       }
     };
 
-    onMounted(refreshVmic);
-    onActivated(refreshVmic);
+    onMounted(startVmicWatch);
+    onActivated(startVmicWatch);
 
     const sw_1 = () => {
       pywebview.api.update_all_switch_state(store.state.switch_state);

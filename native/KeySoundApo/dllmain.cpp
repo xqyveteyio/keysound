@@ -27,6 +27,7 @@ public:
         if (ppv == NULL) {
             return E_POINTER;
         }
+        KeySoundTraceGuid(riid == __uuidof(IClassFactory) || riid == __uuidof(IUnknown) ? 10 : 11, riid);
         if (riid == __uuidof(IClassFactory) || riid == __uuidof(IUnknown)) {
             *ppv = static_cast<IClassFactory*>(this);
             AddRef();
@@ -53,15 +54,18 @@ public:
             return E_POINTER;
         }
         *ppv = NULL;
-        if (outer != NULL) {
+        KeySoundTrace(19, NULL, outer != NULL ? 1 : 0);
+        KeySoundTraceGuid(20, riid);
+        // 聚合时 COM 规定只能先要 IUnknown，别的接口由外层再来查
+        if (outer != NULL && riid != __uuidof(IUnknown)) {
             return CLASS_E_NOAGGREGATION;
         }
-        CKeySoundApo* apo = new (std::nothrow) CKeySoundApo();
+        CKeySoundApo* apo = new (std::nothrow) CKeySoundApo(outer);
         if (apo == NULL) {
             return E_OUTOFMEMORY;
         }
-        const HRESULT hr = apo->QueryInterface(riid, ppv);
-        apo->Release();
+        const HRESULT hr = apo->InternalQueryInterface(riid, ppv);
+        apo->InternalRelease();
         return hr;
     }
 
@@ -85,6 +89,8 @@ STDAPI DllGetClassObject(REFCLSID rclsid, REFIID riid, void** ppv) {
         return E_POINTER;
     }
     *ppv = NULL;
+    KeySoundTraceGuid(1, rclsid);
+    KeySoundTraceGuid(2, riid);
     if (rclsid != CLSID_KeySoundApo) {
         return CLASS_E_CLASSNOTAVAILABLE;
     }

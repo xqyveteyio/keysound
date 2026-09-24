@@ -3,14 +3,14 @@
     "mouse_flag": false,
     "break_flag": false,
     "single_flag": false,
-    "now_play": true,
-    "choose_sound": "哲学",
+    "now_play": false,
+    "choose_sound": "可莉日语",
     "auto_run": false,
     "font": "微软雅黑",
     "theme": "默认",
     "stop_hotkey": "",
-    "virtual_mic": false,
-    "virtual_mic_device": "{8bbf015d-f08b-4ea5-a9ac-1d5b39dc2d89}",
-    "virtual_mic_slot": "efx",
-    "virtual_mic_volume": 101
+    "virtual_mic": true,
+    "virtual_mic_device": "{c4577cdd-0eae-40b5-bbbb-ffc4887437bd}",
+    "virtual_mic_slot": "sfx",
+    "virtual_mic_volume": 100
 }

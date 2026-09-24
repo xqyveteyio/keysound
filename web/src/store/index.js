@@ -21,7 +21,7 @@ export default createStore({
       stop_hotkey: "",
       virtual_mic: false,
       virtual_mic_device: "",
-      virtual_mic_slot: "efx",
+      virtual_mic_slot: "sfx",
       virtual_mic_volume: 100,
     },
     sound_list: [], // 音效包列表

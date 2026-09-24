@@ -189,6 +189,9 @@ _decode_lock = threading.Lock()
 # 最近一次看到 APO 心跳在动的时间，设置页问状态的时候用
 _apo_seen_at = 0.0
 _last_alive = None
+# 混音线程还没打开映射时，设置页仍要能报出刚探测到的格式
+_seen_rate = 0
+_seen_channels = 0
 
 
 def _config():
@@ -266,6 +269,16 @@ def _decoder_loop():
             _playing.append(_Playing(samples))
 
 
+def _remember_format(header):
+    global _seen_rate, _seen_channels
+    if header is None:
+        return
+    if header.sample_rate:
+        _seen_rate = int(header.sample_rate)
+    if header.channels:
+        _seen_channels = int(header.channels)
+
+
 def _mix_and_write():
     global _apo_seen_at, _last_alive
 
@@ -274,6 +287,7 @@ def _mix_and_write():
     if _last_alive is not None and alive != _last_alive:
         # 心跳在动才说明 APO 真被 audiodg 加载起来了，段存在只能说明它建过
         _apo_seen_at = time.time()
+        _remember_format(header)
     _last_alive = alive
 
     with _playing_lock:
@@ -355,13 +369,15 @@ def _worker_loop():
 
 def start():
     global _worker, _decoder
-    if _worker is not None:
+    # 线程崩过之后 _worker 还指着旧对象，不看 is_alive 的话再 start 会直接返回，心跳永远不再更新
+    if _worker is not None and _worker.is_alive():
         return
     _worker_stop.clear()
     _worker = threading.Thread(target=_worker_loop, name='keysound-vmic', daemon=True)
     _worker.start()
-    _decoder = threading.Thread(target=_decoder_loop, name='keysound-vmic-decode', daemon=True)
-    _decoder.start()
+    if _decoder is None or not _decoder.is_alive():
+        _decoder = threading.Thread(target=_decoder_loop, name='keysound-vmic-decode', daemon=True)
+        _decoder.start()
 
 
 def stop():
@@ -423,14 +439,28 @@ def _endpoint_name(guid):
         return guid
 
 
+def _value_has_clsid(value):
+    if isinstance(value, (list, tuple)):
+        return any(str(item).upper() == APO_CLSID.upper() for item in value)
+    return bool(value) and str(value).upper() == APO_CLSID.upper()
+
+
 def _endpoint_slot(guid):
     try:
         with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE,
                             '%s\\%s\\FxProperties' % (CAPTURE_ROOT, guid), 0,
                             winreg.KEY_READ | winreg.KEY_WOW64_64KEY) as key:
+            # 复合列表优先：有它的时候引擎不看下面那个单 CLSID
+            composite = {
+                'sfx': '{d04e05a6-594b-4fb6-a80d-01af5eed7d1d},13',
+                'mfx': '{d04e05a6-594b-4fb6-a80d-01af5eed7d1d},14',
+                'efx': '{d04e05a6-594b-4fb6-a80d-01af5eed7d1d},15',
+            }
+            for slot, value_name in composite.items():
+                if _value_has_clsid(_read_value(key, value_name)):
+                    return slot
             for slot, value_name in SLOT_VALUES.items():
-                value = _read_value(key, value_name)
-                if value and str(value).upper() == APO_CLSID.upper():
+                if _value_has_clsid(_read_value(key, value_name)):
                     return slot
     except OSError:
         pass
@@ -616,7 +646,8 @@ def _run_elevated(arguments):
 def enable_virtual_mic(device_id='', slot=''):
     config = _config()
     device_id = device_id or config.virtual_mic_device
-    slot = slot or config.virtual_mic_slot or 'efx'
+    # 采集只挂 SFX。EFX 是厂商效果，追加进去会把录音弄成静音
+    slot = 'sfx'
     if not device_id:
         return {'ok': False, 'message': '先选一只麦克风'}
     if slot not in SLOT_VALUES:
@@ -650,38 +681,58 @@ def disable_virtual_mic():
     return _run_elevated(['uninstall', '--endpoint', device_id, '--backup', _backup_dir()])
 
 
+def _probe_heartbeat():
+    # 再映射一次只读心跳，和混音线程各看各的视图，不会抢写指针。
+    # 采集流没开的时候这里打不开，是常态。
+    probe = _Ring()
+    if not probe.open():
+        return False
+    first = probe.header.apo_alive
+    time.sleep(0.15)
+    moving = probe.healthy() and probe.header.apo_alive != first
+    if moving:
+        global _apo_seen_at
+        _apo_seen_at = time.time()
+        _remember_format(probe.header)
+    probe.close()
+    return moving
+
+
 def virtual_mic_status():
     config = _config()
     device_id = getattr(config, 'virtual_mic_device', '')
     installed_slot = _endpoint_slot(device_id) if device_id else ''
+    enabled = bool(getattr(config, 'virtual_mic', False))
+    if enabled:
+        # 混音线程如果在音频服务重启时崩了，这里把它拉起来，不然设置页永远看不到心跳
+        start()
 
     # 心跳在动才说明 APO 真的被 audiodg 加载起来了。
-    # 混音线程没在跑的时候现场采一次，两次读数不一样就算活着
-    alive = False
-    if _apo_seen_at and time.time() - _apo_seen_at < 2.0:
-        alive = True
-    elif _worker is None:
-        # 混音线程没在跑（开关是关的）才现场采一次，不然会和它抢同一个映射
-        probe = _Ring()
-        if probe.open():
-            first = probe.header.apo_alive
-            time.sleep(0.15)
-            alive = probe.healthy() and probe.header.apo_alive != first
-            probe.close()
+    # 混音线程的记录过期时再现场读一次：它卡住的时候不能让设置页一直显示没加载
+    alive = bool(_apo_seen_at and time.time() - _apo_seen_at < 2.0)
+    if not alive and enabled:
+        alive = _probe_heartbeat()
+
+    if _ring.healthy():
+        sample_rate = _ring.header.sample_rate
+        channels = _ring.header.channels
+    else:
+        sample_rate = _seen_rate
+        channels = _seen_channels
 
     return {
         'supported': True,
-        'enabled': bool(getattr(config, 'virtual_mic', False)),
+        'enabled': enabled,
         'device': device_id,
         'device_name': _endpoint_name(device_id) if device_id else '',
         'slot': getattr(config, 'virtual_mic_slot', 'efx'),
         'installed_slot': installed_slot,
         # 配置说开着、注册表里却没有我们的 CLSID，多半是音频驱动重装或者
         # Windows 更新把配置冲掉了（实现方案.md 第 3 节第 2 条），要提示用户重新挂一次
-        'needs_repair': bool(getattr(config, 'virtual_mic', False)) and not installed_slot,
+        'needs_repair': enabled and not installed_slot,
         'apo_running': alive,
-        'sample_rate': _ring.header.sample_rate if _ring.healthy() else 0,
-        'channels': _ring.header.channels if _ring.healthy() else 0,
+        'sample_rate': sample_rate,
+        'channels': channels,
         'volume': getattr(config, 'virtual_mic_volume', 100),
         'tool_ready': bool(_find_file('vmic_setup.exe')) and bool(_find_file('KeySoundApo.dll')),
         'decoder_ready': _decoder_ready(),

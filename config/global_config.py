@@ -19,7 +19,7 @@ class GlobalConfig:
         # 挂在哪只麦克风上，存 MMDevices 里的端点 GUID，空字符串表示还没选
         self.virtual_mic_device = ""
         # APO 挂在哪个槽位：efx / mfx / sfx，不同机器能用的不一样
-        self.virtual_mic_slot = "efx"
+        self.virtual_mic_slot = "sfx"
         # 混进麦克风那一路的音量，100 表示和音箱那一路一样大
         self.virtual_mic_volume = 100
         # 查看是否有config.json

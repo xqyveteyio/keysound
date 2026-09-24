@@ -43,9 +43,20 @@ static const wchar_t* kFxMfx = L"{d04e05a6-594b-4fb6-a80d-01af5eed7d1d},6";
 static const wchar_t* kFxEfx = L"{d04e05a6-594b-4fb6-a80d-01af5eed7d1d},7";
 static const wchar_t* kFxLfx = L"{d04e05a6-594b-4fb6-a80d-01af5eed7d1d},1";
 static const wchar_t* kFxGfx = L"{d04e05a6-594b-4fb6-a80d-01af5eed7d1d},2";
+// Windows 10 1809 之后，端点上只要有这组「复合效果」列表，音频引擎就只看它，
+// 上面那三个单 CLSID 会被忽略。这台机器的 Realtek 麦克风就是这种
+static const wchar_t* kCompSfx = L"{d04e05a6-594b-4fb6-a80d-01af5eed7d1d},13";
+static const wchar_t* kCompMfx = L"{d04e05a6-594b-4fb6-a80d-01af5eed7d1d},14";
+static const wchar_t* kCompEfx = L"{d04e05a6-594b-4fb6-a80d-01af5eed7d1d},15";
 static const wchar_t* kModesSfx = L"{d3993a3f-99c2-4402-b5ec-a92a0367664b},5";
 static const wchar_t* kModesMfx = L"{d3993a3f-99c2-4402-b5ec-a92a0367664b},6";
 static const wchar_t* kModesEfx = L"{d3993a3f-99c2-4402-b5ec-a92a0367664b},7";
+// IAudioSystemEffects，和 KeySoundApo::GetRegistrationProperties 里报的那个一致
+static const wchar_t* kApoInterface = L"{5FA00F27-ADD6-499A-8A9D-6B98521FA75B}";
+static const wchar_t* kApoClassRoot =
+    L"SOFTWARE\\Classes\\AudioEngine\\AudioProcessingObjects\\";
+// 原来的 SFX CLSID 记在这里，APO 初始化时把它当成子效果先跑一遍
+static const wchar_t* kChildApoRoot = L"SOFTWARE\\KeySound\\Child APOs\\";
 // 这个是 1 的话所有 sAPO 都不加载（声音设置里「启用音频增强」那个勾）
 static const wchar_t* kDisableSysFx = L"{1da5d803-d492-4edd-8c23-e0c0ffee7f0e},5";
 // 读设备名用
@@ -56,19 +67,22 @@ static const wchar_t* kPropFriendlyName = L"{a45c254e-df1c-4efd-8020-67d146a850e
 // 只删掉自己写的值是不够的——OEM（Realtek / Nahimic）原本就可能占着同一个槽位，
 // 不按备份恢复会让用户的音效增强直接消失
 static const wchar_t* kFxBackupValues[] = {
-    kFxSfx, kFxMfx, kFxEfx, kFxLfx, kFxGfx, kModesSfx, kModesMfx, kModesEfx,
+    kFxSfx, kFxMfx, kFxEfx, kFxLfx, kFxGfx,
+    kCompSfx, kCompMfx, kCompEfx,
+    kModesSfx, kModesMfx, kModesEfx,
 };
 
 struct SlotInfo {
     const wchar_t* name;
     const wchar_t* fx_value;
+    const wchar_t* composite_value;
     const wchar_t* modes_value;
 };
 
 static const SlotInfo kSlots[] = {
-    { L"efx", kFxEfx, kModesEfx },
-    { L"mfx", kFxMfx, kModesMfx },
-    { L"sfx", kFxSfx, kModesSfx },
+    { L"efx", kFxEfx, kCompEfx, kModesEfx },
+    { L"mfx", kFxMfx, kCompMfx, kModesMfx },
+    { L"sfx", kFxSfx, kCompSfx, kModesSfx },
 };
 
 // ---------------------------------------------------------------- 小工具
@@ -206,6 +220,91 @@ static LONG WriteStringValue(HKEY key, const wchar_t* name, const wchar_t* value
 static LONG WriteDwordValue(HKEY key, const wchar_t* name, DWORD value) {
     return RegSetValueExW(key, name, 0, REG_DWORD, reinterpret_cast<const BYTE*>(&value),
                           sizeof(value));
+}
+
+static bool SameText(const std::wstring& left, const std::wstring& right) {
+    return _wcsicmp(left.c_str(), right.c_str()) == 0;
+}
+
+// REG_MULTI_SZ 拆成字符串。旧的单 CLSID 有时是 REG_SZ，也认
+static std::vector<std::wstring> ReadMultiSz(HKEY key, const wchar_t* name) {
+    std::vector<std::wstring> items;
+    DWORD type = 0;
+    std::vector<BYTE> data;
+    if (!ReadValueRaw(key, name, &type, &data) || data.size() < sizeof(wchar_t)) {
+        return items;
+    }
+    const wchar_t* text = reinterpret_cast<const wchar_t*>(&data[0]);
+    const size_t chars = data.size() / sizeof(wchar_t);
+    if (type == REG_SZ) {
+        size_t length = 0;
+        while (length < chars && text[length] != L'\0') {
+            ++length;
+        }
+        if (length > 0) {
+            items.push_back(std::wstring(text, length));
+        }
+        return items;
+    }
+    if (type != REG_MULTI_SZ) {
+        return items;
+    }
+    size_t index = 0;
+    while (index < chars && text[index] != L'\0') {
+        const size_t start = index;
+        while (index < chars && text[index] != L'\0') {
+            ++index;
+        }
+        if (index > start) {
+            items.push_back(std::wstring(text + start, index - start));
+        }
+        ++index;
+    }
+    return items;
+}
+
+static LONG WriteMultiSz(HKEY key, const wchar_t* name, const std::vector<std::wstring>& items) {
+    std::wstring multi;
+    for (size_t i = 0; i < items.size(); ++i) {
+        multi += items[i];
+        multi += L'\0';
+    }
+    multi += L'\0';
+    return RegSetValueExW(key, name, 0, REG_MULTI_SZ,
+                          reinterpret_cast<const BYTE*>(multi.c_str()),
+                          (DWORD)(multi.size() * sizeof(wchar_t)));
+}
+
+static void AppendGuid(HKEY key, const wchar_t* name, const wchar_t* guid) {
+    std::vector<std::wstring> items = ReadMultiSz(key, name);
+    for (size_t i = 0; i < items.size(); ++i) {
+        if (SameText(items[i], guid)) {
+            return;
+        }
+    }
+    items.push_back(guid);
+    WriteMultiSz(key, name, items);
+}
+
+static void RemoveGuid(HKEY key, const wchar_t* name, const wchar_t* guid) {
+    std::vector<std::wstring> items = ReadMultiSz(key, name);
+    std::vector<std::wstring> kept;
+    bool changed = false;
+    for (size_t i = 0; i < items.size(); ++i) {
+        if (SameText(items[i], guid)) {
+            changed = true;
+            continue;
+        }
+        kept.push_back(items[i]);
+    }
+    if (!changed) {
+        return;
+    }
+    if (kept.empty()) {
+        RegDeleteValueW(key, name);
+        return;
+    }
+    WriteMultiSz(key, name, kept);
 }
 
 static std::wstring ToHex(const std::vector<BYTE>& data) {
@@ -465,13 +564,43 @@ static LONG RegisterCom(const std::wstring& dll_path) {
         RegCloseKey(inproc_key);
     }
     RegCloseKey(clsid_key);
-    return rc;
+    if (rc != ERROR_SUCCESS) {
+        return rc;
+    }
+
+    // 复合效果列表里的 CLSID，音频引擎会先到这里核对，没有这项就直接跳过
+    HKEY apo_key = NULL;
+    rc = OpenKeyRW(HKEY_LOCAL_MACHINE,
+                   std::wstring(kApoClassRoot) + KEYSOUND_APO_CLSID_STRING,
+                   true, &apo_key);
+    if (rc != ERROR_SUCCESS) {
+        return rc;
+    }
+    WriteStringValue(apo_key, L"FriendlyName", KEYSOUND_APO_FRIENDLY_NAME);
+    WriteStringValue(apo_key, L"Copyright", KEYSOUND_APO_COPYRIGHT);
+    WriteDwordValue(apo_key, L"MajorVersion", 1);
+    WriteDwordValue(apo_key, L"MinorVersion", 0);
+    // 必须和 GetRegistrationProperties 一致：就地 + 采样率一致 + 容器位深一致。
+    // 0x1 | 0x4 | 0x8。引擎靠这个把 SFX 前面的数据转成 32 位浮点
+    WriteDwordValue(apo_key, L"Flags", 0x1 | 0x4 | 0x8);
+    WriteDwordValue(apo_key, L"MinInputConnections", 1);
+    WriteDwordValue(apo_key, L"MaxInputConnections", 1);
+    WriteDwordValue(apo_key, L"MinOutputConnections", 1);
+    WriteDwordValue(apo_key, L"MaxOutputConnections", 1);
+    WriteDwordValue(apo_key, L"MaxInstances", 0xFFFFFFFF);
+    WriteDwordValue(apo_key, L"NumAPOInterfaces", 1);
+    WriteStringValue(apo_key, L"APOInterface0", kApoInterface);
+    RegCloseKey(apo_key);
+    return ERROR_SUCCESS;
 }
 
 static void UnregisterCom() {
     const std::wstring base = std::wstring(L"SOFTWARE\\Classes\\CLSID\\") + KEYSOUND_APO_CLSID_STRING;
     RegDeleteKeyExW(HKEY_LOCAL_MACHINE, (base + L"\\InprocServer32").c_str(), KEY_WOW64_64KEY, 0);
     RegDeleteKeyExW(HKEY_LOCAL_MACHINE, base.c_str(), KEY_WOW64_64KEY, 0);
+    RegDeleteKeyExW(HKEY_LOCAL_MACHINE,
+                    (std::wstring(kApoClassRoot) + KEYSOUND_APO_CLSID_STRING).c_str(),
+                    KEY_WOW64_64KEY, 0);
 }
 
 static void SetProtectedAudioDG(bool disable_protection) {
@@ -487,6 +616,21 @@ static void SetProtectedAudioDG(bool disable_protection) {
         RegDeleteValueW(key, kDisableProtectedValue);
     }
     RegCloseKey(key);
+}
+
+static void RememberChild(const std::wstring& endpoint, const std::wstring& child_guid) {
+    HKEY key = NULL;
+    if (OpenKeyRW(HKEY_LOCAL_MACHINE, std::wstring(kChildApoRoot) + endpoint, true, &key) != ERROR_SUCCESS) {
+        return;
+    }
+    WriteStringValue(key, L"PreMixChild", child_guid.c_str());
+    RegCloseKey(key);
+}
+
+static void ForgetChild(const std::wstring& endpoint) {
+    const std::wstring path = std::wstring(kChildApoRoot) + endpoint;
+    RegDeleteKeyExW(HKEY_LOCAL_MACHINE, path.c_str(), KEY_WOW64_64KEY, 0);
+    RegDeleteKeyExW(HKEY_LOCAL_MACHINE, L"SOFTWARE\\KeySound\\Child APOs", KEY_WOW64_64KEY, 0);
 }
 
 static void WriteModesProperty(HKEY fx_key, const wchar_t* value_name) {
@@ -508,6 +652,85 @@ static void WriteModesProperty(HKEY fx_key, const wchar_t* value_name) {
     RegSetValueExW(fx_key, value_name, 0, REG_MULTI_SZ,
                    reinterpret_cast<const BYTE*>(multi.c_str()),
                    (DWORD)(multi.size() * sizeof(wchar_t)));
+}
+
+// audiodg 拒绝加载用户目录里的 DLL。智能应用控制还会按哈希拦住没签名的新文件，
+// 所以正式挂上的那份必须在 Program Files，并且用本机「KeySound Local APO」证书签过
+static std::wstring FindSignTool() {
+    std::wstring best;
+    WIN32_FIND_DATAW data = {};
+    HANDLE find = FindFirstFileW(L"C:\\Program Files (x86)\\Windows Kits\\10\\bin\\*", &data);
+    if (find == INVALID_HANDLE_VALUE) {
+        return best;
+    }
+    do {
+        if ((data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0 || data.cFileName[0] == L'.') {
+            continue;
+        }
+        std::wstring candidate = L"C:\\Program Files (x86)\\Windows Kits\\10\\bin\\";
+        candidate += data.cFileName;
+        candidate += L"\\x64\\signtool.exe";
+        if (GetFileAttributesW(candidate.c_str()) != INVALID_FILE_ATTRIBUTES && candidate > best) {
+            best = candidate;
+        }
+    } while (FindNextFileW(find, &data));
+    FindClose(find);
+    return best;
+}
+
+static bool RunHidden(const std::wstring& command) {
+    std::vector<wchar_t> buffer(command.begin(), command.end());
+    buffer.push_back(0);
+    STARTUPINFOW si = {};
+    si.cb = sizeof(si);
+    si.dwFlags = STARTF_USESHOWWINDOW;
+    si.wShowWindow = SW_HIDE;
+    PROCESS_INFORMATION pi = {};
+    if (!CreateProcessW(NULL, &buffer[0], NULL, NULL, FALSE, CREATE_NO_WINDOW, NULL, NULL, &si, &pi)) {
+        return false;
+    }
+    WaitForSingleObject(pi.hProcess, 60000);
+    DWORD code = 1;
+    GetExitCodeProcess(pi.hProcess, &code);
+    CloseHandle(pi.hThread);
+    CloseHandle(pi.hProcess);
+    return code == 0;
+}
+
+static void SignStagedDll(const std::wstring& dll) {
+    const std::wstring tool = FindSignTool();
+    if (tool.empty()) {
+        Log(L"没找到 signtool，跳过签名");
+        return;
+    }
+    const std::wstring command = L"\"" + tool + L"\" sign /sm /fd SHA256 /n \"KeySound Local APO\" \"" + dll + L"\"";
+    if (!RunHidden(command)) {
+        Log(L"签名失败。若智能应用控制开着，audiodg 会拒绝加载这份 DLL");
+    }
+}
+
+static std::wstring StageDll(const std::wstring& source) {
+    wchar_t program_files[MAX_PATH] = {};
+    if (SHGetFolderPathW(NULL, CSIDL_PROGRAM_FILES, NULL, SHGFP_TYPE_CURRENT, program_files) != S_OK) {
+        return L"";
+    }
+    const std::wstring dir = std::wstring(program_files) + L"\\KeySound";
+    CreateDirectoryW(dir.c_str(), NULL);
+    const std::wstring dest = dir + L"\\KeySoundApo.dll";
+    bool copied = (_wcsicmp(source.c_str(), dest.c_str()) == 0);
+    if (!copied) {
+        copied = CopyFileW(source.c_str(), dest.c_str(), FALSE) != 0;
+        if (!copied) {
+            // 正在采集时 audiodg 占着旧文件，先把音频栈停掉再覆盖
+            RestartAudioStack();
+            copied = CopyFileW(source.c_str(), dest.c_str(), FALSE) != 0;
+        }
+    }
+    if (!copied) {
+        return L"";
+    }
+    SignStagedDll(dest);
+    return dest;
 }
 
 static int CommandInstall(const std::wstring& dll_path, const std::wstring& endpoint,
@@ -556,7 +779,17 @@ static int CommandInstall(const std::wstring& dll_path, const std::wstring& endp
         ExportRescueReg(endpoint, BackupPath(backup_dir, endpoint, L".reg"));
     }
 
-    rc = RegisterCom(dll_path);
+    const std::wstring staged = StageDll(dll_path);
+    if (staged.empty()) {
+        Log(L"复制 DLL 到 Program Files 失败");
+        WriteResultFile(result_path, false, L"没法把 KeySoundApo.dll 装到 Program Files", L"");
+        RegCloseKey(fx_key);
+        if (props_key) {
+            RegCloseKey(props_key);
+        }
+        return 4;
+    }
+    rc = RegisterCom(staged);
     if (rc != ERROR_SUCCESS) {
         Log(L"注册 COM 失败，错误码 %ld", rc);
         WriteResultFile(result_path, false, L"注册 COM 组件失败", L"");
@@ -567,10 +800,30 @@ static int CommandInstall(const std::wstring& dll_path, const std::wstring& endp
         return 5;
     }
 
-    // SFX/MFX/EFX 里只要有一个在，LFX/GFX 就会被忽略，所以只写目标槽位那一个
-    rc = WriteStringValue(fx_key, slot->fx_value, KEYSOUND_APO_CLSID_STRING);
+    // 麦克风只挂 SFX，和 Equalizer APO 对采集设备的做法一样。
+    // EFX 紧挨硬件，格式经常是 16 位 PCM；把我们追加进那条复合链后，
+    // 录音机拿到的是静音，而系统设置里的电平条还在动（它看的是效果处理前的电平）。
+    UNREFERENCED_PARAMETER(slot);
+    UNREFERENCED_PARAMETER(write_modes);
+    std::wstring child;
+    const std::vector<std::wstring> composite = ReadMultiSz(fx_key, kCompSfx);
+    for (size_t i = 0; i < composite.size(); ++i) {
+        if (!composite[i].empty() && !SameText(composite[i], KEYSOUND_APO_CLSID_STRING)) {
+            child = composite[i];
+            break;
+        }
+    }
+    if (child.empty()) {
+        const std::wstring single = ReadStringValue(fx_key, kFxSfx);
+        if (!single.empty() && !SameText(single, KEYSOUND_APO_CLSID_STRING)) {
+            child = single;
+        }
+    }
+    RememberChild(endpoint, child);
+
+    rc = WriteStringValue(fx_key, kFxSfx, KEYSOUND_APO_CLSID_STRING);
     if (rc != ERROR_SUCCESS) {
-        Log(L"写槽位失败，错误码 %ld", rc);
+        Log(L"写 SFX 失败，错误码 %ld", rc);
         WriteResultFile(result_path, false, L"往麦克风端点写 APO 配置失败", L"");
         RegCloseKey(fx_key);
         if (props_key) {
@@ -578,8 +831,18 @@ static int CommandInstall(const std::wstring& dll_path, const std::wstring& endp
         }
         return 6;
     }
-    if (write_modes) {
-        WriteModesProperty(fx_key, slot->modes_value);
+    if (!composite.empty()) {
+        // 复合列表存在时引擎不看上面的单 CLSID。列表里只留我们，
+        // 原来的 CLSID 已经记成子 APO，处理时先调用它，不再并排挂第二个
+        std::vector<std::wstring> only_us;
+        only_us.push_back(KEYSOUND_APO_CLSID_STRING);
+        WriteMultiSz(fx_key, kCompSfx, only_us);
+    }
+    if (ReadMultiSz(fx_key, kModesSfx).empty()) {
+        // 缺省模式就是 DEFAULT。不要把 RAW 写进厂商的 EFX，那会改变原来的采集路径
+        std::vector<std::wstring> modes;
+        modes.push_back(L"{C18E2F7E-933D-4965-B7D1-1EEF228D2AF3}");
+        WriteMultiSz(fx_key, kModesSfx, modes);
     }
 
     if (props_key != NULL) {
@@ -606,7 +869,7 @@ static int CommandInstall(const std::wstring& dll_path, const std::wstring& endp
 
     std::wstring extra = L"\"restarted\": ";
     extra += restarted ? L"true" : L"false";
-    extra += L", \"slot\": \"" + std::wstring(slot->name) + L"\"";
+    extra += L", \"slot\": \"sfx\"";
     WriteResultFile(result_path, true,
                     restarted ? L"已挂到这只麦克风上" : L"配置已写入，但音频服务没重启成功，重启一次系统再试",
                     extra);
@@ -650,6 +913,13 @@ static int CommandUninstall(const std::wstring& endpoint, const std::wstring& ba
         }
     }
 
+    // 第一次安装时的备份还没有复合列表。恢复完再从列表里摘掉我们，避免 Realtek 的项被一起清掉
+    if (fx_key != NULL) {
+        RemoveGuid(fx_key, kCompSfx, KEYSOUND_APO_CLSID_STRING);
+        RemoveGuid(fx_key, kCompMfx, KEYSOUND_APO_CLSID_STRING);
+        RemoveGuid(fx_key, kCompEfx, KEYSOUND_APO_CLSID_STRING);
+    }
+
     if (fx_key != NULL) {
         RegCloseKey(fx_key);
     }
@@ -657,6 +927,7 @@ static int CommandUninstall(const std::wstring& endpoint, const std::wstring& ba
         RegCloseKey(props_key);
     }
 
+    ForgetChild(endpoint);
     UnregisterCom();
     SetProtectedAudioDG(false);
 
