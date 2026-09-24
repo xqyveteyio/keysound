@@ -1,13 +1,7 @@
 from config.global_config import global_config_obj
 from config.window_config import window_config_obj
 import threading
-
-try:
-    import pynput
-except Exception as e:
-    # Linux 上没有 X11 / 权限时 pynput 会直接导入失败，不能让它拖垮整个程序
-    print('pynput 不可用，鼠标音效将被关闭:', e)
-    pynput = None
+import pynput
 
 def on_scroll(x, y, dx, dy):
     print('Scrolled {0} at {1}'.format(
@@ -22,8 +16,6 @@ def on_move(x, y):
 
   # 启动鼠标监听
 def start_mouse():
-    if pynput is None:
-        return
     with pynput.mouse.Listener(
         on_click=on_click,
     ) as listener:

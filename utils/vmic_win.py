@@ -20,10 +20,7 @@ import threading
 import time
 from array import array
 
-from utils.platform_util import IS_WINDOWS
-
-if IS_WINDOWS:
-    import winreg
+import winreg
 
 # ---------------------------------------------------------------- 常量
 # 下面这些必须和 native/common/KeySoundShared.h 保持一致
@@ -59,40 +56,39 @@ DECODE_CACHE_SIZE = 48
 
 
 def is_supported():
-    return IS_WINDOWS
+    return True
 
 
 # ---------------------------------------------------------------- Win32 绑定
 
-if IS_WINDOWS:
-    _kernel32 = ctypes.WinDLL('kernel32', use_last_error=True)
-    _kernel32.OpenFileMappingW.restype = ctypes.c_void_p
-    _kernel32.OpenFileMappingW.argtypes = [ctypes.c_uint32, ctypes.c_int, ctypes.c_wchar_p]
-    _kernel32.MapViewOfFile.restype = ctypes.c_void_p
-    _kernel32.MapViewOfFile.argtypes = [ctypes.c_void_p, ctypes.c_uint32,
-                                        ctypes.c_uint32, ctypes.c_uint32, ctypes.c_size_t]
-    _kernel32.UnmapViewOfFile.argtypes = [ctypes.c_void_p]
-    _kernel32.CloseHandle.argtypes = [ctypes.c_void_p]
-    _kernel32.WaitForSingleObject.argtypes = [ctypes.c_void_p, ctypes.c_uint32]
+_kernel32 = ctypes.WinDLL('kernel32', use_last_error=True)
+_kernel32.OpenFileMappingW.restype = ctypes.c_void_p
+_kernel32.OpenFileMappingW.argtypes = [ctypes.c_uint32, ctypes.c_int, ctypes.c_wchar_p]
+_kernel32.MapViewOfFile.restype = ctypes.c_void_p
+_kernel32.MapViewOfFile.argtypes = [ctypes.c_void_p, ctypes.c_uint32,
+                                    ctypes.c_uint32, ctypes.c_uint32, ctypes.c_size_t]
+_kernel32.UnmapViewOfFile.argtypes = [ctypes.c_void_p]
+_kernel32.CloseHandle.argtypes = [ctypes.c_void_p]
+_kernel32.WaitForSingleObject.argtypes = [ctypes.c_void_p, ctypes.c_uint32]
 
-    FILE_MAP_WRITE = 0x0002
-    FILE_MAP_READ = 0x0004
+FILE_MAP_WRITE = 0x0002
+FILE_MAP_READ = 0x0004
 
 
-    class _RingHeader(ctypes.Structure):
-        _pack_ = 4
-        _fields_ = [
-            ('magic', ctypes.c_uint32),
-            ('version', ctypes.c_uint32),
-            ('sample_rate', ctypes.c_uint32),
-            ('channels', ctypes.c_uint32),
-            ('capacity', ctypes.c_uint32),
-            ('apo_alive', ctypes.c_uint32),
-            ('write_index', ctypes.c_uint32),
-            ('read_index', ctypes.c_uint32),
-            ('consumer_claimed', ctypes.c_uint32),
-            ('reserved', ctypes.c_uint32 * 7),
-        ]
+class _RingHeader(ctypes.Structure):
+    _pack_ = 4
+    _fields_ = [
+        ('magic', ctypes.c_uint32),
+        ('version', ctypes.c_uint32),
+        ('sample_rate', ctypes.c_uint32),
+        ('channels', ctypes.c_uint32),
+        ('capacity', ctypes.c_uint32),
+        ('apo_alive', ctypes.c_uint32),
+        ('write_index', ctypes.c_uint32),
+        ('read_index', ctypes.c_uint32),
+        ('consumer_claimed', ctypes.c_uint32),
+        ('reserved', ctypes.c_uint32 * 7),
+    ]
 
 
 # ---------------------------------------------------------------- 环形缓冲（生产者端）
@@ -202,8 +198,6 @@ def _config():
 
 
 def _enabled():
-    if not IS_WINDOWS:
-        return False
     config = _config()
     return bool(getattr(config, 'virtual_mic', False)) and \
         bool(getattr(config, 'virtual_mic_device', ''))
@@ -361,7 +355,7 @@ def _worker_loop():
 
 def start():
     global _worker, _decoder
-    if not IS_WINDOWS or _worker is not None:
+    if _worker is not None:
         return
     _worker_stop.clear()
     _worker = threading.Thread(target=_worker_loop, name='keysound-vmic', daemon=True)
@@ -501,8 +495,6 @@ def _default_capture_endpoint():
 
 
 def list_capture_devices():
-    if not IS_WINDOWS:
-        return []
     default_id = _default_capture_endpoint()
     devices = []
     try:
@@ -622,9 +614,6 @@ def _run_elevated(arguments):
 
 
 def enable_virtual_mic(device_id='', slot=''):
-    if not IS_WINDOWS:
-        return {'ok': False, 'message': '这个功能只有 Windows 上有'}
-
     config = _config()
     device_id = device_id or config.virtual_mic_device
     slot = slot or config.virtual_mic_slot or 'efx'
@@ -649,9 +638,6 @@ def enable_virtual_mic(device_id='', slot=''):
 
 
 def disable_virtual_mic():
-    if not IS_WINDOWS:
-        return {'ok': False, 'message': '这个功能只有 Windows 上有'}
-
     config = _config()
     device_id = config.virtual_mic_device
     # 先把开关关掉再去改注册表：万一 UAC 被取消，界面上的状态也不会停在「开着」
@@ -665,9 +651,6 @@ def disable_virtual_mic():
 
 
 def virtual_mic_status():
-    if not IS_WINDOWS:
-        return {'supported': False}
-
     config = _config()
     device_id = getattr(config, 'virtual_mic_device', '')
     installed_slot = _endpoint_slot(device_id) if device_id else ''

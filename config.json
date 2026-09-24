@@ -3,7 +3,7 @@
     "mouse_flag": false,
     "break_flag": false,
     "single_flag": false,
-    "now_play": false,
+    "now_play": true,
     "choose_sound": "哲学",
     "auto_run": false,
     "font": "微软雅黑",

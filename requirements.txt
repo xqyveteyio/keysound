@@ -15,7 +15,3 @@ pynput>=1.7 ; sys_platform == "win32"
 # 虚拟麦克风输出：把音效解码 + 重采样 + 转声道数成麦克风端点的格式，
 # 一步到位支持 mp3/wav/flac/ogg，纯 pip 的轮子不用额外装驱动
 miniaudio>=1.59 ; sys_platform == "win32"
-
-# Linux：pywebview 默认用 Qt(QtWebEngine) 内核，qt6 这个 extra 会带上 QtPy + PyQt6 + PyQt6-WebEngine，
-# 托盘走 QSystemTrayIcon，音效走系统 GStreamer（gi，装发行版的包，见 README）
-pywebview[qt6]>=6.0 ; sys_platform == "linux"
