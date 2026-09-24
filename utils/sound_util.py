@@ -32,7 +32,7 @@ def exportSound(name):
     if not result:
         return False
     target = result if isinstance(result, str) else result[0]
-    # Qt 的保存框不会照着筛选器自动补后缀，用户删了得给他加回来
+    # 保存框不一定会按筛选器补上后缀，没有的话补回 .bspack
     if os.path.splitext(target)[1].lower() not in (PACK_EXT, '.zip'):
         target += PACK_EXT
     # make_archive 只认 .zip 后缀（自己往 base_name 后面接），
@@ -137,8 +137,7 @@ def upload_sound():
 
 
 def play_sound(path: str):
-    # 打断模式下最多同时响 3 个音，和 Windows 那边多进程打断的逻辑保持一致
-    audio_util.play_file(path, max_concurrent=3 if global_config_obj.break_flag else 0)
+    audio_util.play_file(path)
 
 # 试听单个音效文件：音效列表里点一下文件名就走这里
 def previewSound(name):

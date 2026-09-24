@@ -1,17 +1,11 @@
-# 通用依赖
+# Windows。窗口用 pywebview 的 Edge WebView2（edgechromium），
+# 不装 Qt。pythonnet 会跟着 pywebview 在 Windows 上装上，用来调 WebView2。
 Pillow>=9.0
 requests>=2.28
-
-# Windows：保持原有实现（全局键盘钩子、playsound、pystray 托盘、注册表自启）
-# pywebview 用 Qt 内核，qt5 这个 extra 会带上 QtPy + PyQt5 + PyQtWebEngine
-pywebview[qt5]>=6.0 ; sys_platform == "win32"
-keyboard>=0.13.5 ; sys_platform == "win32"
-playsound==1.2.2 ; sys_platform == "win32"
-tendo>=0.3.0 ; sys_platform == "win32"
-pywin32>=305 ; sys_platform == "win32"
-pystray>=0.19 ; sys_platform == "win32"
-pynput>=1.7 ; sys_platform == "win32"
-
-# Linux：pywebview 默认用 Qt(QtWebEngine) 内核，qt6 这个 extra 会带上 QtPy + PyQt6 + PyQt6-WebEngine，
-# 托盘走 QSystemTrayIcon，音效走系统 GStreamer（gi，装发行版的包，见 README）
-pywebview[qt6]>=6.0 ; sys_platform == "linux"
+pywebview>=6.0
+keyboard>=0.13.5
+playsound==1.2.2
+tendo>=0.3.0
+pywin32>=305
+pystray>=0.19
+pynput>=1.7

@@ -32,7 +32,7 @@
         <div class="setup_row__text">
           <span class="setup_row__name">停止播放快捷键</span>
           <span class="setup_row__desc">
-            按一下就掐掉正在响的音效，Linux 上只在 KeySound 窗口聚焦时有效。录制时按 Esc 取消
+            按一下就掐掉正在响的音效。录制时按 Esc 取消
           </span>
         </div>
         <div class="hotkey">
@@ -91,8 +91,7 @@
 import { onDeactivated, onUnmounted, ref } from "vue";
 import { useStore } from "vuex";
 
-// 能当快捷键主键的键，名字要和 Python 那边收到的键名一致
-// （Linux 见 utils/web_key.py 的 CODE_MAP，Windows 见 utils/keyfilter.py）
+// 能当快捷键主键的键，名字要和 utils/keyfilter.py 里的一致
 const MAIN_KEYS = {
   Space: "Space",
   Backquote: "~",
