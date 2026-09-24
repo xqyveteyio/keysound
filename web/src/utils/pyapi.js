@@ -27,6 +27,24 @@ export const update_switch_state = () => {
 export const update_sound_info = () => {
   return pywebview.api.updateSoundInfo(store.state.sound_info);
 }
+
+// 把一个音效绑到某个键上。拖到键位和工具栏里下拉选，走的是同一条
+export const assignSoundToKey = (key, sound) => {
+  if (!key || !sound) return;
+  const info = store.state.sound_info;
+  if (!info.assigned_sounds) info.assigned_sounds = [];
+  // 只有「指定」模式才按键取音。拖上去就切过去，不然绑了也听不到
+  info.mode = "指定";
+  const found = info.assigned_sounds.find((item) => item.key === key);
+  if (found) {
+    found.sound = sound;
+  } else {
+    info.assigned_sounds.push({ key, sound });
+  }
+  store.state.choose_key = key;
+  store.state.key_sound = sound;
+  store.dispatch("updateSoundInfo");
+}
 // 获取当前音效包的配置
 export const get_sound_info = () => {
   return pywebview.api.getSoundInfo(store.state.switch_state.choose_sound);

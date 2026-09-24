@@ -57,11 +57,11 @@
         </el-select>
       </div>
 
-      <!-- 指定模式：先按一下键盘选中某个键，再给它挑音效 -->
+      <!-- 指定模式：先按一下键盘选中某个键，再给它挑音效。也可以把音效直接拖到键上 -->
       <div class="field" v-if="store.state.sound_info.mode == '指定'">
         <span class="field__label">键位</span>
         <span class="key_chip" :class="{ is_empty: !store.state.choose_key }">
-          {{ store.state.choose_key || "按一下要设置的键" }}
+          {{ store.state.choose_key || "按一下键，或把音效拖上去" }}
         </span>
         <el-select
           v-model="store.state.key_sound"

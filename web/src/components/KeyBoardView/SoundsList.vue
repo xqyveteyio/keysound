@@ -11,7 +11,9 @@
       <button
         class="sound_item__name"
         type="button"
-        :title="`试听 ${item}`"
+        draggable="true"
+        :title="`拖到键位上绑定，点一下试听 ${item}`"
+        @dragstart="onDragStart(item, $event)"
         @click="previewSound(item)"
       >
         {{ item }}
@@ -47,6 +49,12 @@ export default {
       pywebview.api.previewSound(sound);
     };
 
+    // 拖到键盘上松手时，键位从 dataTransfer 里把文件名读走
+    const onDragStart = (sound, event) => {
+      event.dataTransfer.setData("text/plain", sound);
+      event.dataTransfer.effectAllowed = "copy";
+    };
+
     // 删除音效
     const deleteSound = (sound) => {
       // 删除音效
@@ -68,6 +76,7 @@ export default {
     return {
       store,
       previewSound,
+      onDragStart,
       deleteSound,
       cancelDelete,
     };
@@ -141,7 +150,7 @@ export default {
     color: inherit;
     font-family: inherit;
     font-size: inherit;
-    cursor: pointer;
+    cursor: grab;
   }
 
   &__del {

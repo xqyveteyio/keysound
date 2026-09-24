@@ -103,6 +103,7 @@
 import { reactive, toRefs, ref, onMounted } from "vue";
 import { useStore } from "vuex";
 import bus from "@/utils/bus.js";
+import { assignSoundToKey } from "@/utils/pyapi.js";
 export default {
   setup() {
     const store = useStore();
@@ -190,6 +191,20 @@ export default {
           item.addEventListener("mouseup", () => {
             upKEY(item.innerText);
           });
+          // 音效列表拖过来：经过时亮一下，松手就绑到这个键
+          item.addEventListener("dragover", (event) => {
+            event.preventDefault();
+            item.classList.add("drop_over");
+          });
+          item.addEventListener("dragleave", () => {
+            item.classList.remove("drop_over");
+          });
+          item.addEventListener("drop", (event) => {
+            event.preventDefault();
+            item.classList.remove("drop_over");
+            const sound = event.dataTransfer && event.dataTransfer.getData("text/plain");
+            if (sound) assignSoundToKey(item.innerText, sound);
+          });
         }
       });
     });
@@ -272,6 +287,10 @@ export default {
 // 按下的键：整块反色 + 往下压一点。之前是加一圈蓝色发光，太跳；
 // 反色一样醒目，而且不引入第三种颜色。
 // 选择器写长一点是为了盖过绑定色（.keybind），绑定过的键按下时也要有反馈
+.keyboard_box .key.drop_over {
+  outline: 2px solid var(--kb-bind-border);
+  outline-offset: -2px;
+}
 .keyboard_box .key:active,
 .keyboard_box .key.active {
   background: var(--kb-down-bg);
