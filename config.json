@@ -3,7 +3,7 @@
     "mouse_flag": false,
     "break_flag": false,
     "single_flag": false,
-    "now_play": true,
+    "now_play": false,
     "choose_sound": "可莉日语",
     "auto_run": false,
     "font": "微软雅黑",
