@@ -17,11 +17,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # 不要在这里开 cache: yarn。setup-node 会先用镜像自带的 Yarn 1 查缓存，
+      # 项目要求 Yarn 4，Corepack 还没启用时这一步会直接失败。
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-          cache: yarn
-          cache-dependency-path: web/yarn.lock
 
       - name: Build the UI
         working-directory: web
