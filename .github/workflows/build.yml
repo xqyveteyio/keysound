@@ -1,0 +1,114 @@
+# 编出给用户的安装包：界面、Python 程序、虚拟麦克风的两个原生文件，最后打成一个安装器。
+# 不在每次 push 时跑，PyInstaller 比较慢。Actions 页可以手动跑；打 v* 标签时还会挂到对应的 Release 上。
+name: build
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  package:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: yarn
+          cache-dependency-path: web/yarn.lock
+
+      - name: Build the UI
+        working-directory: web
+        run: |
+          corepack enable
+          corepack prepare yarn@4.18.0 --activate
+          yarn install --immutable
+          yarn build
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: pip
+
+      - name: Freeze KeySound.exe
+        run: |
+          python -m pip install -r requirements.txt pyinstaller
+          python fix_playsound.py
+          pyinstaller --noconfirm installer/KeySound.spec
+
+      - uses: microsoft/setup-msbuild@v2
+
+      - name: Build KeySoundApo.dll
+        run: msbuild native/KeySoundApo/KeySoundApo.vcxproj /p:Configuration=Release /p:Platform=x64 /m
+
+      - name: Build vmic_setup.exe
+        run: msbuild native/vmic_setup/vmic_setup.vcxproj /p:Configuration=Release /p:Platform=x64 /m
+
+      # DLL 带了嵌入式 manifest 的话，在 audiodg 的保护环境里会加载失败而且很难查
+      - name: Check the DLL has no embedded manifest
+        shell: pwsh
+        run: |
+          $dll = 'native/KeySoundApo/x64/Release/KeySoundApo.dll'
+          $bytes = [System.IO.File]::ReadAllBytes($dll)
+          $text = [System.Text.Encoding]::ASCII.GetString($bytes)
+          if ($text -match 'assemblyIdentity') {
+            throw "KeySoundApo.dll 里有嵌入式 manifest，audiodg 会拒绝加载它"
+          }
+
+      - name: Stage files next to the exe
+        shell: pwsh
+        run: |
+          $dest = 'dist/KeySound'
+          Copy-Item -Recurse -Force ui (Join-Path $dest 'ui')
+          Copy-Item -Recurse -Force themes (Join-Path $dest 'themes')
+          Copy-Item native/KeySoundApo/x64/Release/KeySoundApo.dll $dest
+          Copy-Item native/vmic_setup/x64/Release/vmic_setup.exe $dest
+          Get-ChildItem $dest -Recurse -Include *.map | Remove-Item -Force
+          foreach ($name in 'KeySound.exe', 'ui/index.html', 'KeySoundApo.dll', 'vmic_setup.exe') {
+            if (-not (Test-Path (Join-Path $dest $name))) {
+              throw "安装目录里缺了 $name"
+            }
+          }
+
+      - name: Resolve version
+        id: version
+        shell: pwsh
+        run: |
+          if ('${{ github.ref_type }}' -eq 'tag') {
+            $version = '${{ github.ref_name }}' -replace '^v', ''
+          } else {
+            $version = '2.2.${{ github.run_number }}'
+          }
+          "value=$version" >> $env:GITHUB_OUTPUT
+
+      - name: Build the installer
+        shell: pwsh
+        run: |
+          $setup = Join-Path $env:TEMP 'innosetup.exe'
+          # 钉住 6.5：脚本用了 x64compatible，简体中文翻译也是按 6.5 的消息写的
+          Invoke-WebRequest -Uri 'https://files.jrsoftware.org/is/6/innosetup-6.5.0.exe' -OutFile $setup -UseBasicParsing
+          Start-Process $setup -ArgumentList '/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /SP-' -Wait
+          $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          if (-not (Test-Path $iscc)) {
+            throw "没找到 ISCC.exe"
+          }
+          & $iscc "/DMyAppVersion=${{ steps.version.outputs.value }}" installer\KeySound.iss
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: KeySound-Setup
+          path: |
+            dist/KeySound-Setup.exe
+            native/KeySoundApo/x64/Release/KeySoundApo.pdb
+
+      - uses: softprops/action-gh-release@v2
+        if: github.ref_type == 'tag'
+        with:
+          files: dist/KeySound-Setup.exe
