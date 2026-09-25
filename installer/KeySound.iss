@@ -12,7 +12,7 @@
 
 #define MyAppName "KeySound"
 #define MyAppPublisher "Bojaka"
-#define MyAppURL "https://www.bojaka.cn/"
+#define MyAppURL "https://www.bojaka.net/"
 #define MyAppExeName "KeySound.exe"
 
 [Setup]
@@ -33,8 +33,8 @@ ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 OutputDir=..\dist
 OutputBaseFilename=KeySound-Setup
-InfoBeforeFile=..\安装前.txt
-InfoAfterFile=..\安装后.txt
+InfoBeforeFile=安装前.txt
+InfoAfterFile=安装后.txt
 Compression=lzma2
 SolidCompression=yes
 WizardStyle=modern
