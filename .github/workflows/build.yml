@@ -65,17 +65,28 @@ jobs:
         shell: pwsh
         run: |
           $dest = 'dist/KeySound'
-          Copy-Item -Recurse -Force ui (Join-Path $dest 'ui')
-          Copy-Item -Recurse -Force themes (Join-Path $dest 'themes')
-          Copy-Item -Recurse -Force sounds (Join-Path $dest 'sounds')
-          Copy-Item logo.ico $dest
+          # robocopy 复制成功时退出码是 1 到 7，不能当成失败。
+          $PSNativeCommandUseErrorActionPreference = $false
+          # Copy-Item -Recurse 在有的 PowerShell 上会只建出空目录，音效就全丢了。robocopy 会把文件带上。
+          New-Item -ItemType Directory -Force (Join-Path $dest 'ui'), (Join-Path $dest 'themes'), (Join-Path $dest 'sounds') | Out-Null
+          robocopy ui (Join-Path $dest 'ui') /E /NFL /NDL /NJH /NJS /nc /ns /np | Out-Null
+          if ($LASTEXITCODE -ge 8) { throw "复制 ui 失败: $LASTEXITCODE" }
+          robocopy themes (Join-Path $dest 'themes') /E /NFL /NDL /NJH /NJS /nc /ns /np | Out-Null
+          if ($LASTEXITCODE -ge 8) { throw "复制 themes 失败: $LASTEXITCODE" }
+          robocopy sounds (Join-Path $dest 'sounds') /E /NFL /NDL /NJH /NJS /nc /ns /np | Out-Null
+          if ($LASTEXITCODE -ge 8) { throw "复制 sounds 失败: $LASTEXITCODE" }
+          Copy-Item -Force logo.ico (Join-Path $dest 'logo.ico')
           Copy-Item native/KeySoundApo/x64/Release/KeySoundApo.dll $dest
           Copy-Item native/vmic_setup/x64/Release/vmic_setup.exe $dest
-          Get-ChildItem $dest -Recurse -Include *.map | Remove-Item -Force
-          foreach ($name in 'KeySound.exe', 'ui/index.html', 'logo.ico', 'sounds', 'KeySoundApo.dll', 'vmic_setup.exe') {
+          Get-ChildItem $dest -Recurse -Filter *.map -File | Remove-Item -Force
+          foreach ($name in 'KeySound.exe', 'ui/index.html', 'logo.ico', 'KeySoundApo.dll', 'vmic_setup.exe') {
             if (-not (Test-Path (Join-Path $dest $name))) {
               throw "安装目录里缺了 $name"
             }
+          }
+          $audio = @(Get-ChildItem (Join-Path $dest 'sounds') -Recurse -File | Where-Object { $_.Extension -match '\.(mp3|wav|flac|ogg)$' })
+          if ($audio.Count -lt 1) {
+            throw "sounds 目录里没有音频文件，安装包不能就这样出去"
           }
 
       - name: Resolve version

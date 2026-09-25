@@ -38,6 +38,8 @@ a = Analysis(
     binaries=binaries,
     datas=datas,
     hiddenimports=hiddenimports,
+    # 窗口走系统 WebView2。本机如果装了 PyQt，collect webview 会把它整份打进来
+    excludes=['PyQt5', 'PyQt6', 'PySide2', 'PySide6', 'qtpy'],
     noarchive=False,
 )
 pyz = PYZ(a.pure)

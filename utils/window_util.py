@@ -128,7 +128,8 @@ def create_window_():
       tmp = True
     else:
       tmp = False
-    webview.start(debug=tmp, gui=WEBVIEW_GUI)
+    # 窗口图标要单独交给 WebView2。只嵌在 exe 里的话，这个窗口经常还是空白图标。
+    webview.start(debug=tmp, gui=WEBVIEW_GUI, icon=os.path.join(app_dir(), "logo.ico"))
     if not tray_running:
       # 没有托盘时窗口关掉就再也打不开了，直接退出，别留一个看不见的进程
       os._exit(0)
