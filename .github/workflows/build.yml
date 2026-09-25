@@ -76,7 +76,7 @@ jobs:
           # Copy-Item -Recurse 在有的 PowerShell 上会只建出空目录，音效就全丢了。
           Copy-Tree ui (Join-Path $dest 'ui')
           Copy-Tree themes (Join-Path $dest 'themes')
-          Copy-Tree sounds (Join-Path $dest 'sounds') }
+          Copy-Tree sounds (Join-Path $dest 'sounds')
           Copy-Item -Force logo.ico (Join-Path $dest 'logo.ico')
           Copy-Item native/KeySoundApo/x64/Release/KeySoundApo.dll $dest
           Copy-Item native/vmic_setup/x64/Release/vmic_setup.exe $dest
