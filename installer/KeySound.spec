@@ -48,6 +48,7 @@ exe = EXE(
     [],
     exclude_binaries=True,
     name='KeySound',
+    icon=os.path.join(root, 'logo.ico'),
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,

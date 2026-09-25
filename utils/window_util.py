@@ -145,7 +145,8 @@ def create_menu(event):
       MenuItem(text='退出', action=on_exit),
     )
     
-    image = Image.open("logo.ico")
+    # 图标放在 exe 旁边。相对路径在打包后会对到别的目录，托盘线程一异常就整个图标都没了
+    image = Image.open(os.path.join(app_dir(), "logo.ico"))
     icon = pystray.Icon("name", image, "keysound", menu)
     icon.run()
 
