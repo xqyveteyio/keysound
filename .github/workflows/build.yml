@@ -91,8 +91,8 @@ jobs:
         shell: pwsh
         run: |
           $setup = Join-Path $env:TEMP 'innosetup.exe'
-          # 钉住 6.5：脚本用了 x64compatible，简体中文翻译也是按 6.5 的消息写的
-          Invoke-WebRequest -Uri 'https://files.jrsoftware.org/is/6/innosetup-6.5.0.exe' -OutFile $setup -UseBasicParsing
+          # 6.5.0 的旧地址已经 404。发行版改挂在 GitHub 上，钉住 6.7.3，安装目录仍是 Inno Setup 6。
+          Invoke-WebRequest -Uri 'https://github.com/jrsoftware/issrc/releases/download/is-6_7_3/innosetup-6.7.3.exe' -OutFile $setup -UseBasicParsing
           Start-Process $setup -ArgumentList '/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /SP-' -Wait
           $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
           if (-not (Test-Path $iscc)) {
