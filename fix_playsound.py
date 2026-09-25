@@ -90,6 +90,14 @@ def patch(path):
 
 
 def main():
+    # Actions 上的 Windows 控制台是 cp1252。中文 print 一抛异常，后面的改写就不会执行
+    for stream in (sys.stdout, sys.stderr):
+        if hasattr(stream, 'reconfigure'):
+            try:
+                stream.reconfigure(encoding='utf-8', errors='replace')
+            except (OSError, ValueError):
+                pass
+
     if sys.platform != 'win32':
         print('这个补丁只有 Windows 需要，当前平台是', sys.platform)
         return 0
