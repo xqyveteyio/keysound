@@ -36,11 +36,16 @@ jobs:
           python-version: '3.13'
           cache: pip
 
+      - name: Install Python dependencies
+        run: python -m pip install -r requirements.txt pyinstaller
+
+      # playsound 1.2.2 在中文 Windows 上放不出带中文路径的文件，上游没修。
+      # 改的是当前这个 Python 的 site-packages，必须赶在 PyInstaller 收集它之前执行。
+      - name: Patch playsound
+        run: python fix_playsound.py
+
       - name: Freeze KeySound.exe
-        run: |
-          python -m pip install -r requirements.txt pyinstaller
-          python fix_playsound.py
-          pyinstaller --noconfirm installer/KeySound.spec
+        run: pyinstaller --noconfirm installer/KeySound.spec
 
       - uses: microsoft/setup-msbuild@v2
 
