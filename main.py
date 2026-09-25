@@ -1,9 +1,14 @@
 # -*- coding:utf-8 _*-
-import webview
-import threading
 import os
 import sys
-from utils.platform_util import acquire_single_instance, show_warning
+
+# 配置和音效都按当前目录读写，必须在导入那些模块之前切过来。
+# 从开始菜单打开时，工作目录不一定是安装目录。
+from utils.platform_util import acquire_single_instance, app_dir, show_warning
+os.chdir(app_dir())
+
+import webview
+import threading
 from utils.mouse_util import *
 from utils.keyboard_util import *
 from utils.sound_util import *

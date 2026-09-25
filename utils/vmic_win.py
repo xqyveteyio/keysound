@@ -561,7 +561,9 @@ def list_capture_devices():
 # ---------------------------------------------------------------- 装 / 卸
 
 def _app_dir():
-    return os.path.abspath('.')
+    # 和主程序用同一个目录，避免打包后 cwd 不是 exe 所在目录时找不到 DLL
+    from utils.platform_util import app_dir
+    return app_dir()
 
 
 def _find_file(name):

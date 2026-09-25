@@ -8,7 +8,7 @@ from utils.keyboard_util import *
 from utils.sound_util import *
 import json
 from utils.api import *
-from utils.platform_util import WEBVIEW_GUI
+from utils.platform_util import WEBVIEW_GUI, app_dir
 from utils.vmic_win import (list_capture_devices, enable_virtual_mic,
                             disable_virtual_mic, virtual_mic_status)
 import winreg
@@ -84,7 +84,9 @@ def inject_theme():
 # 创建window
 def create_window_():
     global tray_running
-    window_config_obj.window = webview.create_window('KeySound', './ui/index.html', width=1200, height=560,text_select=False,resizable=True)
+    # 必须用绝对路径。相对路径会被 pywebview 拼到 _internal 上，页面就 404。
+    page = os.path.join(app_dir(), 'ui', 'index.html')
+    window_config_obj.window = webview.create_window('KeySound', page, width=1200, height=560,text_select=False,resizable=True)
     # window_config_obj.window = webview.create_window('KeySound', 'http://127.0.0.1:8080/', width=1200, height=560,text_select=False,resizable=True)
     window_config_obj.window.events.closing += on_closing
     window_config_obj.window.expose(getSoundList,

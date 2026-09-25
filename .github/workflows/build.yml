@@ -101,12 +101,19 @@ jobs:
           & $iscc "/DMyAppVersion=${{ steps.version.outputs.value }}" installer\KeySound.iss
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
+      # 直接上传仓库里的路径会把 dist/、native/ 整段目录结构打进压缩包。
+      # 先摊平，下载下来就是安装包和符号文件两样。
+      - name: Collect download files
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force artifact | Out-Null
+          Copy-Item dist/KeySound-Setup.exe artifact/
+          Copy-Item native/KeySoundApo/x64/Release/KeySoundApo.pdb artifact/
+
       - uses: actions/upload-artifact@v4
         with:
           name: KeySound-Setup
-          path: |
-            dist/KeySound-Setup.exe
-            native/KeySoundApo/x64/Release/KeySoundApo.pdb
+          path: artifact/*
 
       - uses: softprops/action-gh-release@v2
         if: github.ref_type == 'tag'
