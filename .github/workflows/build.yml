@@ -65,16 +65,18 @@ jobs:
         shell: pwsh
         run: |
           $dest = 'dist/KeySound'
-          # robocopy 复制成功时退出码是 1 到 7，不能当成失败。
+          # robocopy 复制成功时退出码是 1 到 7。不改掉的话，pwsh 会带着这个码退出，Actions 就判失败。
           $PSNativeCommandUseErrorActionPreference = $false
-          # Copy-Item -Recurse 在有的 PowerShell 上会只建出空目录，音效就全丢了。robocopy 会把文件带上。
-          New-Item -ItemType Directory -Force (Join-Path $dest 'ui'), (Join-Path $dest 'themes'), (Join-Path $dest 'sounds') | Out-Null
-          robocopy ui (Join-Path $dest 'ui') /E /NFL /NDL /NJH /NJS /nc /ns /np | Out-Null
-          if ($LASTEXITCODE -ge 8) { throw "复制 ui 失败: $LASTEXITCODE" }
-          robocopy themes (Join-Path $dest 'themes') /E /NFL /NDL /NJH /NJS /nc /ns /np | Out-Null
-          if ($LASTEXITCODE -ge 8) { throw "复制 themes 失败: $LASTEXITCODE" }
-          robocopy sounds (Join-Path $dest 'sounds') /E /NFL /NDL /NJH /NJS /nc /ns /np | Out-Null
-          if ($LASTEXITCODE -ge 8) { throw "复制 sounds 失败: $LASTEXITCODE" }
+          function Copy-Tree($src, $dst) {
+            New-Item -ItemType Directory -Force $dst | Out-Null
+            & robocopy $src $dst /E /NFL /NDL /NJH /NJS /nc /ns /np | Out-Null
+            if ($LASTEXITCODE -ge 8) { throw "复制 $src 失败: $LASTEXITCODE" }
+            $global:LASTEXITCODE = 0
+          }
+          # Copy-Item -Recurse 在有的 PowerShell 上会只建出空目录，音效就全丢了。
+          Copy-Tree ui (Join-Path $dest 'ui')
+          Copy-Tree themes (Join-Path $dest 'themes')
+          Copy-Tree sounds (Join-Path $dest 'sounds') }
           Copy-Item -Force logo.ico (Join-Path $dest 'logo.ico')
           Copy-Item native/KeySoundApo/x64/Release/KeySoundApo.dll $dest
           Copy-Item native/vmic_setup/x64/Release/vmic_setup.exe $dest
